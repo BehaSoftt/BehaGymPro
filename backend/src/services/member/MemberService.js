@@ -272,8 +272,9 @@ class MemberService {
 
         if (!fullName) throw new Error('Ad Soyad zorunludur.');
 
-        const finalCompanyId = (currentUser && currentUser.companyId) || null;
-        const finalBranchId = (currentUser && currentUser.branchId) || null;
+        const finalBranchId = memberData.branchId || (currentUser && currentUser.branchId) || null;
+        const branchObj = finalBranchId ? await Branch.findByPk(finalBranchId) : null;
+        const finalCompanyId = memberData.companyId || branchObj?.companyId || (currentUser && currentUser.companyId) || null;
 
         console.log('[DEBUG] Sanitized values:', { fullName, username, email, phone, finalCompanyId, finalBranchId });
 

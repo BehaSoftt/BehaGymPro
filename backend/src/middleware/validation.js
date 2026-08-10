@@ -8,15 +8,9 @@ const schemas = {
         }),
         memberCode: Joi.string().allow('', null),
         phone: Joi.string().allow('', null),
-        gender: Joi.string().valid('Erkek', 'Kadın', 'DİĞER', 'MALE', 'FEMALE', 'OTHER').required().messages({
-            'any.only': 'Geçersiz cinsiyet seçimi.',
-            'any.required': 'Cinsiyet alanı gereklidir.'
-        }),
-        branchId: Joi.string().uuid().required().messages({
-            'string.guid': 'Geçersiz şube ID formatı.',
-            'any.required': 'Şube seçimi zorunludur.'
-        }),
-        profileType: Joi.string().valid('MEMBER', 'INSTRUCTOR', 'PERSONNEL').default('MEMBER')
+        gender: Joi.string().valid('Erkek', 'Kadın', 'DİĞER', 'MALE', 'FEMALE', 'OTHER').allow('', null).optional(),
+        branchId: Joi.string().uuid().allow('', null).optional(),
+        profileType: Joi.string().valid('MEMBER', 'INSTRUCTOR', 'PERSONNEL', 'USER').default('MEMBER')
     }).unknown(true),
 
     updateMember: Joi.object({
@@ -40,9 +34,10 @@ const validate = (schemaName) => {
 
         if (error) {
             const errorMessages = error.details.map(detail => detail.message);
+            console.error(`[Validation Error] (${schemaName}):`, errorMessages, 'Body:', JSON.stringify(req.body));
             return res.status(400).json({ 
                 status: 'ERROR', 
-                message: errorMessages[0], // İlk hatayı göster
+                message: errorMessages[0], 
                 errors: errorMessages 
             });
         }
