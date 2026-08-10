@@ -12,6 +12,7 @@
       @save="saveMember"
       @cancel="closeForm"
       @photo-upload="handlePhotoUpload"
+      @send-whats-app="sendWhatsAppMessage(newMember)"
     />
 
     <div v-else class="flex-1 flex flex-col overflow-hidden">
@@ -526,6 +527,17 @@ const saveMember = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const sendWhatsAppMessage = (member) => {
+  if (!member || !member.phone) {
+    toast('Telefon numarası girilmemiş.', 'warning')
+    return
+  }
+  const cleanPhone = member.phone.replace(/\D/g, '')
+  const phoneFormatted = cleanPhone.startsWith('90') ? cleanPhone : (cleanPhone.startsWith('0') ? '9' + cleanPhone : '90' + cleanPhone)
+  const text = encodeURIComponent(`Merhaba ${member.fullName}, Ayaz Spor Salonu üyelik bilgileriniz güncellenmiştir.\n\nÜyelik Bitiş Tarihi: ${member.expiryDate || 'Belirtilmedi'}\nÜye Kodu: ${member.memberCode}`)
+  window.open(`https://wa.me/${phoneFormatted}?text=${text}`, '_blank')
 }
 
 const toggleMemberStatus = async (member) => {

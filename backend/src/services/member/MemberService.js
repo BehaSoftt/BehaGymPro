@@ -512,6 +512,34 @@ class MemberService {
                 });
             }
         }
+        // WhatsApp Güncelleme Bildirimi
+        if (member.phone) {
+            try {
+                const fullMember = await Member.findByPk(member.id, {
+                    include: [
+                        { model: Branch, as: 'Branch' },
+                        { model: Company, as: 'Company' },
+                        { model: MembershipPackage, as: 'package' }
+                    ]
+                });
+                if (fullMember) {
+                    const identity = WhatsAppService.resolveIdentity(fullMember.Branch, fullMember.Company);
+                    const updateMsg = WhatsAppService.getWelcomeMessage(
+                        fullMember,
+                        fullMember.package?.name || fullMember.membershipType || 'Standart Üyelik',
+                        fullMember.package?.price || null,
+                        identity.companyName,
+                        identity.branchName,
+                        identity.phone
+                    );
+                    console.log(`📱 [WhatsApp Update] Üye güncellendi, bildirim gönderiliyor: ${fullMember.phone}`);
+                    WhatsAppService.sendAutoMessage(fullMember.phone, updateMsg).catch(e => console.error('📱 [WhatsApp Update Error]:', e.message));
+                }
+            } catch (e) {
+                console.error('📱 [WhatsApp Update Error]:', e.message);
+            }
+        }
+
         return member;
     }
 
