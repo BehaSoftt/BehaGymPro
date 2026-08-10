@@ -341,9 +341,10 @@ class MemberService {
                 console.log('[DEBUG] Member created:', member.id);
 
                 // AUTOMATIC CARI KART (FINANCIAL ACCOUNT) CREATION
+                let cariAccount = null;
                 try {
                     const FinancialAccountService = require('../finance/FinancialAccountService');
-                    await FinancialAccountService.createMemberAccount(member, t);
+                    cariAccount = await FinancialAccountService.createMemberAccount(member, t);
                     console.log('[DEBUG] Cari Kart automatically created for member:', member.fullName);
                 } catch (cariErr) {
                     console.error('[CARİ KART ERROR]:', cariErr.message);
@@ -359,7 +360,7 @@ class MemberService {
                     console.log('[DEBUG] SportGroupMember junction entry created for group:', member.sportGroupId);
                 }
 
-                // MEMBERSHIP PACKAGE ASSIGNMENT: If packageId is provided, create active MemberPackage
+                // MEMBERSHIP PACKAGE ASSIGNMENT & BORÇLANDIRMA
                 if (member.packageId) {
                     const pkg = await MembershipPackage.findByPk(member.packageId, { transaction: t });
                     if (pkg) {
@@ -367,7 +368,7 @@ class MemberService {
                         let expDate = member.expiryDate;
                         if (!expDate && pkg.durationMonths) {
                             const d = new Date(startDate);
-                            d.setMonth(d.getMonth() + pkg.durationMonths);
+                            d.setMonth(d.getMonth() + parseInt(pkg.durationMonths));
                             expDate = d.toISOString().split('T')[0];
                         }
                         await MemberPackage.create({
@@ -376,7 +377,7 @@ class MemberService {
                             startDate,
                             expiryDate: expDate,
                             status: 'ACTIVE',
-                            paymentStatus: 'PAID',
+                            paymentStatus: 'UNPAID',
                             remainingSessions: pkg.sessionCount || 0,
                             companyId: finalCompanyId,
                             branchId: finalBranchId,
@@ -386,7 +387,28 @@ class MemberService {
                         if (expDate) {
                             await member.update({ expiryDate: expDate }, { transaction: t });
                         }
-                        console.log('[DEBUG] Active MemberPackage created for package:', pkg.name);
+
+                        // DEBIT CARI ACCOUNT (BORÇLANDIRMA)
+                        const price = parseFloat(pkg.price || 0);
+                        if (price > 0 && cariAccount) {
+                            await FinancialTransaction.create({
+                                financialAccountId: cariAccount.id,
+                                amount: price,
+                                transactionType: 'DEBIT',
+                                category: 'MEMBERSHIP',
+                                paymentMethod: 'CARİ',
+                                description: `Üyelik Paket Satışı: ${pkg.name}`,
+                                branchId: finalBranchId,
+                                companyId: finalCompanyId,
+                                createdBy: currentUser?.id || user.id
+                            }, { transaction: t });
+
+                            await cariAccount.update({
+                                totalDebit: sequelize.literal(`"totalDebit" + ${price}`),
+                                balance: sequelize.literal(`"balance" + ${price}`)
+                            }, { transaction: t });
+                            console.log(`[DEBUG] Debited ${price} TL to Cari Account for package: ${pkg.name}`);
+                        }
                     }
                 }
 
