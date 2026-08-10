@@ -83,52 +83,69 @@ class AuthService {
      * Kart veya QR ile giriş
      */
     static async cardLogin(qrData) {
+        if (!qrData) throw new AppError('Tanımsız Kart veya QR Kod.', 400);
+
+        // 1. Önce Düz Metin (Kart No / Üye Kodu / İrtibat Kodu) ile Ara
+        const profile = await Member.findOne({
+            where: {
+                [Op.or]: [
+                    { memberCode: qrData }, 
+                    { instructorCode: qrData }, 
+                    { personnelCode: qrData },
+                    { phone: qrData }
+                ],
+                isActive: true
+            }
+        });
+
+        if (profile) {
+            const memberRole = profile.profileType === 'INSTRUCTOR' ? 'EĞİTMEN' : (profile.profileType === 'PERSONNEL' ? 'PERSONEL' : 'MEMBER');
+            const token = jwt.sign({
+                id: profile.id,
+                role: memberRole,
+                companyId: profile.companyId,
+                branchId: profile.branchId
+            }, SecurityVault.get('jwt_secret'), { expiresIn: '30d' });
+
+            return {
+                token,
+                user: {
+                    id: profile.id,
+                    fullName: profile.fullName,
+                    photo: profile.photo,
+                    role: memberRole,
+                    companyId: profile.companyId,
+                    branchId: profile.branchId
+                }
+            };
+        }
+
+        // 2. Şifreli QR Kod ise Decrypt Et
         let userId = null;
         let type = null;
+        try {
+            const bytes = CryptoJS.AES.decrypt(qrData, SecurityVault.get('jwt_secret'));
+            const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
 
-        if (qrData) {
-            try {
-                const bytes = CryptoJS.AES.decrypt(qrData, SecurityVault.get('jwt_secret'));
-                const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+            if (decryptedString) {
+                const decryptedData = JSON.parse(decryptedString);
+                userId = decryptedData.userId || decryptedData.memberId;
+                type = decryptedData.type || (decryptedData.memberId ? 'MEMBER' : 'PERSONNEL');
 
-                if (decryptedString) {
-                    const decryptedData = JSON.parse(decryptedString);
-                    userId = decryptedData.userId || decryptedData.memberId;
-                    type = decryptedData.type || (decryptedData.memberId ? 'MEMBER' : 'PERSONNEL');
-
-                    if (decryptedData.timestamp && (Date.now() - decryptedData.timestamp) > (2 * 60 * 1000)) {
-                        throw new Error('QR Kodun süresi dolmuş.');
-                    }
-                }
-            } catch (e) {
-                // Şifreli değilse düz metin (Kart No) olarak ara
-                const profile = await Member.findOne({
-                    where: {
-                        [Op.or]: [{ memberCode: qrData }, { instructorCode: qrData }, { personnelCode: qrData }],
-                        isActive: true
-                    }
-                });
-                if (profile) {
-                    userId = profile.userId || profile.id;
-                    type = profile.profileType;
+                if (decryptedData.timestamp && (Date.now() - decryptedData.timestamp) > (2 * 60 * 1000)) {
+                    throw new AppError('QR Kodun süresi dolmuş.', 400);
                 }
             }
+        } catch (e) {
+            // Decrypt hatası
         }
 
-        if (!userId) throw new Error('Tanımsız Kart veya QR Kod.');
+        if (!userId) throw new AppError('Tanımsız Kart veya QR Kod.', 404);
 
-        // Token ve User objesi oluştur (Kısa versiyon)
-        let user;
-        if (type === 'MEMBER') {
-            const member = await Member.findByPk(userId) || await Member.findOne({ where: { userId } });
-            const token = jwt.sign({ id: member.id, role: 'MEMBER' }, SecurityVault.get('jwt_secret'), { expiresIn: '30d' });
-            return { token, user: { id: member.id, fullName: member.fullName, photo: member.photo, role: 'MEMBER' } };
-        } else {
-            user = await User.findByPk(userId);
-            if (!user) throw new Error('Kullanıcı bulunamadı.');
-            const token = this.generateToken(user);
-            return { token, user: this.formatUserResponse(user) };
-        }
+        const user = await User.findByPk(userId);
+        if (!user) throw new AppError('Kullanıcı hesabı bulunamadı.', 404);
+        const token = this.generateToken(user);
+        return { token, user: this.formatUserResponse(user) };
     }
 
     /**
