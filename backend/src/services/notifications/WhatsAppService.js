@@ -93,13 +93,22 @@ class WhatsAppService {
      * Şube ayarlarına göre mesaj kimliğini çözümler (Şirket/Şube ismi override desteği)
      */
     static resolveIdentity(branch, company) {
-        if (!branch) return { companyName: company?.name, branchName: branch?.name, phone: branch?.phone };
+        let companyName = branch?.HeaderCompany?.name || company?.name || branch?.Company?.name;
+        let branchName = branch?.HeaderBranch?.name || branch?.name;
+        const phone = branch?.phone;
 
-        const companyName = branch.HeaderCompany?.name || company?.name || branch.Company?.name;
-        const branchName = branch.HeaderBranch?.name || branch.name;
-        const phone = branch.phone;
+        if (companyName && (companyName.toUpperCase().includes('BEHASOFT') || companyName.toUpperCase().includes('HEADQUARTERS'))) {
+            companyName = null;
+        }
+        if (branchName && (branchName.toUpperCase().includes('BEHASOFT') || branchName.toUpperCase().includes('HEADQUARTERS'))) {
+            branchName = null;
+        }
 
-        return { companyName, branchName, phone };
+        return { 
+            companyName: companyName || 'Ayaz Spor Salonu', 
+            branchName, 
+            phone 
+        };
     }
 
     /**
@@ -107,14 +116,16 @@ class WhatsAppService {
      */
     static getHeader(companyName, branchName, phone) {
         let companyStr = '';
-        const isBehasoft = companyName && companyName.toUpperCase().includes('BEHASOFT');
+        const isBehasoftCompany = companyName && (companyName.toUpperCase().includes('BEHASOFT') || companyName.toUpperCase().includes('HEADQUARTERS'));
 
-        if (companyName && !isBehasoft) {
+        if (companyName && !isBehasoftCompany) {
             companyStr = `*${companyName.toUpperCase()}*`;
         }
 
         let branchStr = branchName || '';
-        if (branchStr.toLowerCase().includes('headquarters')) branchStr = '';
+        if (branchStr.toUpperCase().includes('BEHASOFT') || branchStr.toUpperCase().includes('HEADQUARTERS')) {
+            branchStr = '';
+        }
 
         let header = this.icons.building + ' ';
 
@@ -125,8 +136,7 @@ class WhatsAppService {
         } else if (branchStr) {
             header += `*${branchStr.toUpperCase()}*`;
         } else {
-            // Hiçbiri yoksa varsayılan
-            header += '*AYAZ SPOR CENTER*';
+            header += '*AYAZ SPOR SALONU*';
         }
 
         if (phone) {
@@ -142,13 +152,61 @@ class WhatsAppService {
         return `${this.getHeader(companyName, branchName, phone)}${message}`;
     }
 
-    static getWelcomeMessage(member, packageName, packagePrice, companyName, branchName, phone) {
-        const priceText = packagePrice ? `\n🔹 *Tutar:* ₺${parseFloat(packagePrice).toFixed(2)}` : '';
-        const brand = branchName || (companyName && !companyName.toUpperCase().includes('BEHASOFT') ? companyName : 'Spor Merkezimiz');
-        return `${this.getHeader(companyName, branchName, phone)}Merhaba *${member.fullName}*! ${this.icons.welcome} \n\n` +
-            `*${brand}* ailesine hoş geldin. Üyeliğin başarıyla tanımlandı.\n\n` +
-            `🔹 *Paket:* ${packageName || 'Standart'}${priceText}\n` +
-            `🔹 *Bitiş Tarihi:* ${member.expiryDate || 'Belirtilmedi'}\n` +
+    static getWelcomeMessage(member, pkgObjOrName, packagePrice, companyName, branchName, phone) {
+        const sanitizeName = (name) => {
+            if (!name) return null;
+            if (name.toUpperCase().includes('BEHASOFT') || name.toUpperCase().includes('HEADQUARTERS')) return null;
+            return name;
+        };
+
+        const cleanCompany = sanitizeName(companyName);
+        const cleanBranch = sanitizeName(branchName);
+        const brand = cleanCompany || cleanBranch || 'Ayaz Spor Salonu';
+
+        const formatDate = (dateVal) => {
+            if (!dateVal) return null;
+            const d = new Date(dateVal);
+            if (isNaN(d.getTime())) return null;
+            return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
+
+        const regDateStr = formatDate(member.registrationDate || member.createdAt) || formatDate(new Date());
+
+        let pkgName = null;
+        let price = packagePrice;
+
+        if (typeof pkgObjOrName === 'object' && pkgObjOrName !== null) {
+            pkgName = pkgObjOrName.name;
+            price = pkgObjOrName.price || packagePrice;
+        } else if (typeof pkgObjOrName === 'string') {
+            pkgName = pkgObjOrName;
+        }
+
+        const isPackageSelected = pkgName && pkgName !== 'Standart' && pkgName !== 'PAKET SEÇİLMEDİ (STANDART)' && !pkgName.includes('Standart Üyelik');
+
+        let packageDetailsStr = '';
+
+        if (isPackageSelected) {
+            const priceText = price ? `\n🔹 *Paket Ücreti:* ₺${parseFloat(price).toFixed(2)}` : '';
+            const startDateStr = formatDate(member.startDate || member.registrationDate) || regDateStr;
+            const expiryDateStr = formatDate(member.expiryDate) || 'Belirtilmedi';
+
+            packageDetailsStr = 
+                `🔹 *Kayıt Tarihi:* ${regDateStr}\n` +
+                `🔹 *Seçilen Paket:* ${pkgName}${priceText}\n` +
+                `🔹 *Üyelik Başlangıç Tarihi:* ${startDateStr}\n` +
+                `🔹 *Üyelik Bitiş Tarihi:* ${expiryDateStr}`;
+        } else {
+            packageDetailsStr = 
+                `🔹 *Kayıt Tarihi:* ${regDateStr}\n` +
+                `🔹 *Üyelik Durumu:* Kayıt Yapıldı (Paket Tanımlaması Bekleniyor)`;
+        }
+
+        const header = this.getHeader(cleanCompany || companyName, cleanBranch || branchName, phone);
+
+        return `${header}Merhaba *${member.fullName}*! ${this.icons.welcome}\n\n` +
+            `*${brand}* ailesine hoş geldin. Sisteme kaydın başarıyla tamamlandı.\n\n` +
+            `${packageDetailsStr}\n` +
             `🔹 *Üye Kodu:* ${member.memberCode}\n\n` +
             `Spor yolculuğunda her zaman yanındayız. Haydi Spora..💪`;
     }
