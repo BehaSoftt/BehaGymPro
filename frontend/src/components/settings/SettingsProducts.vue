@@ -98,52 +98,98 @@
       <Transition name="fade-slide">
         <div v-if="isFormVisible && !['stock_management', 'recipe_management'].includes(productSubTab)" class="p-6 border-b border-slate-800 bg-slate-950/20 animate-in">
            <div class="flex flex-col lg:flex-row gap-6">
-              <div class="flex-1 space-y-4">
-                <!-- Selection Bar (Only for Super Master) -->
-                <BaseGlobalSelector 
-                  v-if="isSuperMaster"
-                  storageKey="product_management_settings" 
-                  @change="onGlobalSelectionChange"
-                  class="!mb-0 !p-0 !bg-transparent !border-0 !shadow-none"
-                />
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <BaseInput v-model="productForm.groupId" type="select" label="Grup">
-                    <option value="">Grup Seçin</option>
-                    <option v-for="g in productGroups" :key="g.id" :value="g.id">{{ g.name }}</option>
-                  </BaseInput>
-                  <BaseInput v-model="productForm.unitId" type="select" label="Birim">
-                    <option value="">Birim Seçin</option>
-                    <option v-for="u in productUnits" :key="u.id" :value="u.id">{{ u.name }}</option>
-                  </BaseInput>
-                  <BaseInput v-model="productForm.type" type="select" label="Ürün Tipi">
-                    <option value="STANDART">STANDART (AL-SAT)</option>
-                    <option value="HAMMADDE">HAMMADDE (DÖKME)</option>
-                    <option value="KARMA">KARMA (REÇETELİ)</option>
-                  </BaseInput>
+              <!-- GRUPLAR FORMU -->
+              <div v-if="productSubTab === 'groups'" class="flex-1 space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black text-purple-400 uppercase tracking-widest">
+                    {{ editingProductGroupId ? 'GRUP DÜZENLE' : 'YENİ ÜRÜN GRUBU EKLE' }}
+                  </span>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <BaseInput v-model="productForm.name" type="text" label="Ürün Adı" placeholder="Ürün İsmi..." />
-                  <div class="grid grid-cols-2 gap-4">
-                    <BaseInput v-model.number="productForm.price" type="number" step="0.01" label="Fiyat (₺)" />
-                    <BaseInput v-if="!editingProductId" v-model.number="productForm.stock" type="number" label="Stok" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Image Section -->
-              <div class="w-full lg:w-44 flex flex-col items-center gap-2">
-                <span class="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest text-center">GÖRSEL</span>
-                <div class="w-full aspect-square bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                  <BaseImageUpload 
-                    v-model="productForm.imageUrl" 
-                    width="100%" 
-                    height="100%" 
-                    @change="productImage = $event"
+                  <BaseInput 
+                    v-model="productGroupForm.name" 
+                    type="text" 
+                    label="Grup Adı *" 
+                    placeholder="Örn: İçecekler, Protein Bar, Atıştırmalık..." 
+                    @keyup.enter="handleGlobalSave"
                   />
                 </div>
               </div>
+
+              <!-- BİRİMLER FORMU -->
+              <div v-else-if="productSubTab === 'units'" class="flex-1 space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black text-rose-400 uppercase tracking-widest">
+                    {{ editingProductUnitId ? 'BİRİM DÜZENLE' : 'YENİ ÜRÜN BİRİMİ EKLE' }}
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <BaseInput 
+                    v-model="productUnitForm.name" 
+                    type="text" 
+                    label="Birim Adı *" 
+                    placeholder="Örn: Adet, Kutu, Paket, Gram..." 
+                    @keyup.enter="handleGlobalSave"
+                  />
+                  <BaseInput 
+                    v-model="productUnitForm.shortName" 
+                    type="text" 
+                    label="Kısaltma" 
+                    placeholder="Örn: ad, kt, pkt, gr..." 
+                    @keyup.enter="handleGlobalSave"
+                  />
+                </div>
+              </div>
+
+              <!-- ÜRÜNLER FORMU (DEFAULT / PRODUCTS_LIST) -->
+              <template v-else>
+                <div class="flex-1 space-y-4">
+                  <!-- Selection Bar (Only for Super Master) -->
+                  <BaseGlobalSelector 
+                    v-if="isSuperMaster"
+                    storageKey="product_management_settings" 
+                    @change="onGlobalSelectionChange"
+                    class="!mb-0 !p-0 !bg-transparent !border-0 !shadow-none"
+                  />
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <BaseInput v-model="productForm.groupId" type="select" label="Grup">
+                      <option value="">Grup Seçin</option>
+                      <option v-for="g in productGroups" :key="g.id" :value="g.id">{{ g.name }}</option>
+                    </BaseInput>
+                    <BaseInput v-model="productForm.unitId" type="select" label="Birim">
+                      <option value="">Birim Seçin</option>
+                      <option v-for="u in productUnits" :key="u.id" :value="u.id">{{ u.name }}</option>
+                    </BaseInput>
+                    <BaseInput v-model="productForm.type" type="select" label="Ürün Tipi">
+                      <option value="STANDART">STANDART (AL-SAT)</option>
+                      <option value="HAMMADDE">HAMMADDE (DÖKME)</option>
+                      <option value="KARMA">KARMA (REÇETELİ)</option>
+                    </BaseInput>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <BaseInput v-model="productForm.name" type="text" label="Ürün Adı" placeholder="Ürün İsmi..." />
+                    <div class="grid grid-cols-2 gap-4">
+                      <BaseInput v-model.number="productForm.price" type="number" step="0.01" label="Fiyat (₺)" />
+                      <BaseInput v-if="!editingProductId" v-model.number="productForm.stock" type="number" label="Stok" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Image Section -->
+                <div class="w-full lg:w-44 flex flex-col items-center gap-2">
+                  <span class="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest text-center">GÖRSEL</span>
+                  <div class="w-full aspect-square bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                    <BaseImageUpload 
+                      v-model="productForm.imageUrl" 
+                      width="100%" 
+                      height="100%" 
+                      @change="productImage = $event"
+                    />
+                  </div>
+                </div>
+              </template>
            </div>
         </div>
       </Transition>
