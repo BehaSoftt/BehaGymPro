@@ -48,8 +48,11 @@ class UserService {
     /**
      * Yeni kullanıcı ve profil oluşturur
      */
-    static async createUser(userData, currentUser) {
-        const { username, password, role, roleId, email, branchId, companyId, fullName, phone, birthDate, personnelCode } = userData;
+    static async createUser(userData, currentUser = {}) {
+        let { username, password, role, roleId, email, branchId, companyId, fullName, phone, birthDate, personnelCode } = userData;
+
+        companyId = companyId || currentUser?.companyId || null;
+        branchId = branchId || currentUser?.branchId || null;
 
         const existing = await User.findOne({ where: { username } });
         if (existing) throw new Error('Bu kullanıcı adı zaten alınmış.');
@@ -57,7 +60,7 @@ class UserService {
         const passwordHash = await bcrypt.hash(password, 10);
         
         // Yetki Kontrolü: Sadece SUPER_MASTER yeni bir SUPER_MASTER oluşturabilir
-        const finalRole = (role === 'SUPER_MASTER' && currentUser.role !== 'SUPER_MASTER') ? 'RECEPTIONIST' : (role || 'RECEPTIONIST');
+        const finalRole = (role === 'SUPER_MASTER' && (currentUser?.role || '').toUpperCase() !== 'SUPER_MASTER') ? 'RECEPTIONIST' : (role || 'RECEPTIONIST');
         
         return await sequelize.transaction(async (t) => {
             const user = await User.create({

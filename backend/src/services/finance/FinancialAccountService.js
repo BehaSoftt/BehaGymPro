@@ -6,6 +6,11 @@ class FinancialAccountService {
      */
     static async createFinancialAccount(entityType, entityId, accountName, branchId, companyId, notes = null, isSystemAccount = false, transaction = null) {
         try {
+            if (!companyId || !branchId) {
+                console.log(`[FinancialAccount] Cari hesap oluşturma atlandı (companyId/branchId eksik): ${accountName}`);
+                return null;
+            }
+
             const existing = await FinancialAccount.findOne({
                 where: { entityType, entityId },
                 transaction
