@@ -189,7 +189,7 @@
           <div class="flex items-center gap-[10px]">
             <BaseButton variant="dark" size="icon" square @click="router.push('/')" title="GERİ"><template #icon><ArrowLeft class="w-5 h-5" /></template></BaseButton>
             <div class="w-px h-6 bg-slate-800 mx-1"></div>
-            <BaseButton variant="primary" size="icon" square @click="showForm = true; editingId = null" title="YENİ ÜYE EKLE"><template #icon><UserPlus class="w-5 h-5" /></template></BaseButton>
+            <BaseButton variant="primary" size="icon" square @click="openAddMemberModal" title="YENİ ÜYE EKLE"><template #icon><UserPlus class="w-5 h-5" /></template></BaseButton>
             
             <div v-if="selectedMembers.length > 0" class="flex items-center gap-[10px] border-l border-slate-800 pl-3 ml-1">
               <BaseButton variant="warning" size="icon" square @click="startEdit(members.find(m => m.id === selectedMembers[0]))" title="DÜZENLE"><template #icon><Edit class="w-5 h-5" /></template></BaseButton>
@@ -421,19 +421,45 @@ watch(showForm, (val) => {
   pageSubtitle.value = val ? (editingId.value ? 'DÜZENLE' : 'YENİ KAYIT') : ''
 })
 
+const openAddMemberModal = () => {
+  editingId.value = null
+  const defaultBranch = auth.user?.branchId || branches.value?.[0]?.id || ''
+  newMember.value = {
+    fullName: '', memberCode: '', gender: '', bloodGroup: '',
+    membershipType: 'STANDART', photo: null, phone: '', email: '',
+    emergencyPhone: '', height: null, weight: null,
+    registrationDate: new Date().toISOString().split('T')[0],
+    isActive: true, profileType: 'MEMBER', specialtyId: '',
+    branchId: defaultBranch,
+    city: '', district: '', address: '', packageId: '',
+    lessonTypes: ['GENERAL'],
+    specialties: []
+  }
+  showForm.value = true
+}
+
 const closeForm = () => {
   showForm.value = false
   editingId.value = null
 }
 
-const startEdit = (member) => {
+const startEdit = async (member) => {
   editingId.value = member.id
   showForm.value = true
+  
+  let fullData = toRaw(member)
+  try {
+    const fetched = await memberService.getById(member.id)
+    if (fetched) fullData = fetched
+  } catch (err) {
+    console.error('Member fetch by ID error:', err)
+  }
+
   const { 
     Branch, specialty, beltBranch, 
     activePackages, privateLessonPackages,
     ...pureData 
-  } = toRaw(member)
+  } = fullData
   
   newMember.value = { 
     ...pureData,

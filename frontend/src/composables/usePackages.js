@@ -39,7 +39,12 @@ export function usePackages() {
   const fetchBranches = async () => {
     try {
       const allBranches = await branchService.getAll();
-      branches.value = allBranches.filter(b => !b.name.toLowerCase().includes('behasoft'));
+      branches.value = (allBranches || []).map(b => {
+        if (b.name && (b.name.toLowerCase().includes('behasoft') || b.name.toLowerCase().includes('headquarters'))) {
+          return { ...b, name: b.name.replace(/behasoft|headquarters/gi, '').trim() || 'Merkez Şube' };
+        }
+        return b;
+      });
     } catch (err) {
       console.error('Branches fetch error:', err);
     }

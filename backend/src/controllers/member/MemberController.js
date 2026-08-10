@@ -59,6 +59,21 @@ class MemberController {
     });
 
     /**
+     * Tek bir üye detayını getir
+     */
+    static getById = catchAsync(async (req, res) => {
+        const member = await Member.findByPk(req.params.id, {
+            include: [
+                { model: User, as: 'user', attributes: ['email', 'username'] },
+                { model: MembershipPackage, as: 'package' },
+                { model: Branch, as: 'Branch' }
+            ]
+        });
+        if (!member) throw new AppError('Üye bulunamadı.', 404);
+        res.json(member);
+    });
+
+    /**
      * Toplu üye sil
      */
     static bulkDelete = catchAsync(async (req, res) => {

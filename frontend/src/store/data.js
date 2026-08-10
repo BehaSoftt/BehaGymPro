@@ -49,8 +49,12 @@ export const useDataStore = defineStore('data', () => {
         loading.value.branches = true
         try {
             const data = await branchService.getAll()
-            // Behasoft içeren şubeleri filtrele
-            branches.value = data.filter(b => !b.name.toLowerCase().includes('behasoft'))
+            branches.value = (data || []).map(b => {
+                if (b.name && (b.name.toLowerCase().includes('behasoft') || b.name.toLowerCase().includes('headquarters'))) {
+                    return { ...b, name: b.name.replace(/behasoft|headquarters/gi, '').trim() || 'Merkez Şube' };
+                }
+                return b;
+            })
         } catch (err) {
             console.error('Şubeler yüklenemedi:', err)
         } finally {
