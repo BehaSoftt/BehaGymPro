@@ -357,11 +357,15 @@ const companyColumns = [
   { key: 'actions', label: 'İŞLEMLER', align: 'right', width: '15%' }
 ]
 
+import { useDataStore } from '../../store/data'
+
+const dataStore = useDataStore()
+
 const props = defineProps({
   isSuperMaster: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['select-company'])
+const emit = defineEmits(['select-company', 'refresh-companies', 'company-updated'])
 
 const {
   companies,
@@ -464,7 +468,10 @@ const saveCompany = async () => {
       toast('Şirket oluşturuldu.')
     }
     closeCompanyForm()
-    fetchCompanies()
+    await fetchCompanies()
+    await dataStore.fetchCompanies(true)
+    emit('refresh-companies')
+    emit('company-updated')
   } catch (err) {
     showAlertError('HATA', err.response?.data?.message || 'Kaydedilemedi')
   } finally {
@@ -479,7 +486,10 @@ const deleteCompany = async (id) => {
     try {
       await companyService.delete(id)
       toast('Şirket silindi.')
-      fetchCompanies()
+      await fetchCompanies()
+      await dataStore.fetchCompanies(true)
+      emit('refresh-companies')
+      emit('company-updated')
     } catch (err) {
       showAlertError('HATA', 'Şirket silinemedi')
     } finally {

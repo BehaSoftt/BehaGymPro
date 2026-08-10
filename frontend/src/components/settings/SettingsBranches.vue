@@ -544,6 +544,7 @@ const getLogoUrl = (logoPath) => {
 }
 
 onMounted(() => {
+  emit('refresh-companies')
   if (!auth.isBehaAdmin && auth.user) {
     globalSelection.value = {
       companyId: auth.user.companyId || '',

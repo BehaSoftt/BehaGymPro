@@ -24,7 +24,11 @@
 
       <!-- Companies Tab Content (Super Master Only) -->
       <div v-if="activeTab === 'companies'" class="h-full flex flex-col">
-          <SettingsCompanies :is-super-master="canManageSystem" />
+          <SettingsCompanies 
+            :is-super-master="canManageSystem"
+            @refresh-companies="fetchCompanies"
+            @company-updated="fetchCompanies"
+          />
       </div>
 
       <!-- Branches Tab Content (Super Master Only) -->
@@ -216,9 +220,14 @@ const initDragToScroll = (el) => {
   })
 }
 
+import { useDataStore } from '../../store/data'
+
+const dataStore = useDataStore()
+
 const fetchCompanies = async () => {
   try {
-    companies.value = await companyService.getAll()
+    await dataStore.fetchCompanies(true)
+    companies.value = dataStore.companies
   } catch (err) {
     console.error('Şirketler yüklenemedi:', err)
   }

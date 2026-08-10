@@ -573,7 +573,7 @@ const selectedCompanyBranches = computed(() => {
 const companies = computed(() => dataStore.companies)
 
 const fetchCompanies = async () => {
-  await dataStore.fetchCompanies()
+  await dataStore.fetchCompanies(true)
 }
 
 const onCompanyChange = () => {
@@ -696,11 +696,8 @@ const statusTextColor = (lic) => {
 }
 
 onMounted(async () => {
-  // İlk yüklemede verileri çek
-  if (!auth.isBehaAdmin) {
-    fetchAllLicenses()
-  }
-  fetchCompanies()
+  await fetchCompanies()
+  await fetchAllLicenses()
 })
 </script>
 
