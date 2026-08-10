@@ -3,10 +3,11 @@ const {
     TrainingPlan, FinancialAccount, SalesTransaction, 
     SalesItem, BeltExam, BeltExamParticipant, 
     PaymentSchedule, PaymentPlan, SportSpecialty,
-    Branch, MemberSportProfile, SportGroupMember,
+    Branch, Company, MemberSportProfile, SportGroupMember,
     sequelize
 } = require('../../models');
 const { Op } = require('sequelize');
+const WhatsAppService = require('../notifications/WhatsAppService');
 
 class MemberService {
     /**
@@ -299,7 +300,7 @@ class MemberService {
         const hashedPassword = bcrypt.hashSync(password || 'member123', 10);
         console.log('[DEBUG] Password hashed sync.');
 
-        return await sequelize.transaction(async (t) => {
+        const createdMember = await sequelize.transaction(async (t) => {
             try {
                 console.log('[DEBUG] Starting transaction...');
                 const user = await User.create({
@@ -348,13 +349,42 @@ class MemberService {
                 return member;
             } catch (innerErr) {
                 console.error('[CRITICAL] Transaction failed:', innerErr);
-                // Eğer Sequelize hatasıysa daha detaylı log bas
                 if (innerErr.errors) {
                     console.error('[DETAILS]:', innerErr.errors.map(e => `${e.path}: ${e.message}`).join(', '));
                 }
-                throw innerErr; // Transaction'ı iptal et ve dışarıya fırlat
+                throw innerErr;
             }
         });
+
+        // WhatsApp Hoş Geldin Bildirimi
+        if (createdMember && createdMember.phone) {
+            try {
+                const fullMember = await Member.findByPk(createdMember.id, {
+                    include: [
+                        { model: Branch, as: 'Branch' },
+                        { model: Company, as: 'Company' },
+                        { model: MembershipPackage, as: 'package' }
+                    ]
+                });
+                if (fullMember) {
+                    const identity = WhatsAppService.resolveIdentity(fullMember.Branch, fullMember.Company);
+                    const welcomeMsg = WhatsAppService.getWelcomeMessage(
+                        fullMember,
+                        fullMember.package?.name || 'Standart Üyelik',
+                        fullMember.package?.price || null,
+                        identity.companyName,
+                        identity.branchName,
+                        identity.phone
+                    );
+                    console.log(`📱 [WhatsApp Welcome] Yeni üyeye hoş geldin mesajı gönderiliyor: ${fullMember.phone}`);
+                    WhatsAppService.sendAutoMessage(fullMember.phone, welcomeMsg).catch(e => console.error('📱 [WhatsApp Welcome Error]:', e.message));
+                }
+            } catch (e) {
+                console.error('📱 [WhatsApp Welcome Error]:', e.message);
+            }
+        }
+
+        return createdMember;
     }
 
     /**
