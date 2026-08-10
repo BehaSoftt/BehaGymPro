@@ -184,7 +184,7 @@
                    type="select"
                    label="Şirket Ataması"
                    required
-                   :disabled="editingBranch"
+                   :disabled="Boolean(editingBranch)"
                    :options="[{ value: '', label: 'Şirket Seçiniz...' }, ...companies.map(c => ({ value: c.id, label: c.name }))]"
                 />
                 
