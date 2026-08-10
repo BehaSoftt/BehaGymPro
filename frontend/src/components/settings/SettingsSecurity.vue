@@ -428,6 +428,7 @@ const userTabs = [
 ]
 
 const companies = ref([])
+const host = window.location.hostname
 
 const isSuperMasterLocal = computed(() => {
   const user = auth.user;
