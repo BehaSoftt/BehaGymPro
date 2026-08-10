@@ -429,6 +429,18 @@ const userTabs = [
 
 const companies = ref([])
 const host = window.location.hostname
+const serverNetworkIp = ref('')
+
+const fetchSystemInfo = async () => {
+  try {
+    const info = await userService.getSystemInfo();
+    if (info?.ips && info.ips.length > 0) {
+      serverNetworkIp.value = info.ips[0];
+    }
+  } catch (err) {
+    console.error('System info fetch error:', err);
+  }
+}
 
 const isSuperMasterLocal = computed(() => {
   const user = auth.user;
@@ -659,7 +671,7 @@ const openUserForm = () => {
     isTwoFactorEnabled: false,
     kioskConfig: role === 'TERMINAL' ? {
       kioskMode: true,
-      serverIP: host,
+      serverIP: serverNetworkIp.value || ((host !== 'localhost' && host !== '127.0.0.1') ? host : '127.0.0.1'),
       autoLogin: true,
       showVirtualKeyboard: false,
       autoRestart: false,
@@ -803,6 +815,7 @@ const formatDate = (dateString) => {
 onMounted(() => {
   fetchBranches()
   fetchCompanies()
+  fetchSystemInfo()
   
   // İlk yüklemede verileri çek (özellikle selector gizliyse veya geç yüklenirse)
   if (auth.user && !globalSelection.value.companyId) {
