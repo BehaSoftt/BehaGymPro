@@ -151,7 +151,10 @@ class MemberService {
         const where = { isActive: true };
 
         if (!isSuperMaster) {
-            Object.assign(where, { branchId, companyId });
+            if (companyId) where.companyId = companyId;
+            if (filters.branchId) where.branchId = filters.branchId;
+        } else {
+            if (filters.branchId) where.branchId = filters.branchId;
         }
 
         if (packageId) where.packageId = packageId;
