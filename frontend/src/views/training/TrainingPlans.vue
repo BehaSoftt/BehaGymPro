@@ -75,13 +75,20 @@
               </div>
 
               <template #footer>
-                <div class="flex items-center gap-2">
-                   <div v-if="plan.member" class="w-6 h-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-[0.55rem] font-black uppercase">
-                      {{ plan.member.fullName?.charAt(0) || '' }}
+                <div class="flex flex-col gap-1.5 w-full text-left">
+                   <div class="flex items-center gap-2">
+                      <div v-if="plan.member" class="w-5 h-5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-[0.55rem] font-black uppercase">
+                         {{ plan.member.fullName?.charAt(0) || '' }}
+                      </div>
+                      <span class="text-[0.6rem] font-black text-slate-300 uppercase truncate">
+                         ÜYE: {{ plan.member ? plan.member.fullName : 'GENEL ŞABLON' }}
+                      </span>
                    </div>
-                   <span class="text-[0.6rem] font-black text-slate-400 uppercase truncate">
-                      {{ plan.member ? plan.member.fullName : 'GENEL ŞABLON' }}
-                   </span>
+                   <div class="flex items-center gap-2 text-purple-400">
+                      <span class="text-[0.6rem] font-black uppercase truncate">
+                         EĞİTMEN: {{ plan.instructor?.fullName || (instructors.find(i => String(i.id) === String(plan.instructorId))?.fullName) || 'ATANMADI' }}
+                      </span>
+                   </div>
                 </div>
               </template>
             </BaseCard>
@@ -92,12 +99,13 @@
         <BaseTable
           v-else
           :columns="[
-            { key: 'details',      label: 'PLAN DETAYI' },
-            { key: 'level',        label: 'SEVİYE',          align: 'center' },
-            { key: 'memberInfo',   label: 'ÜYE BİLGİSİ' },
-            { key: 'packageBranch',label: 'PAKET / BRANŞ',   align: 'center' },
-            { key: 'stats',        label: 'İSTATİSTİKLER',      align: 'center' },
-            { key: 'status',       label: 'DURUM',            align: 'center' },
+            { key: 'details',        label: 'PLAN DETAYI' },
+            { key: 'level',          label: 'SEVİYE',          align: 'center' },
+            { key: 'memberInfo',     label: 'ÜYE BİLGİSİ' },
+            { key: 'instructorInfo', label: 'EĞİTMEN HOCA' },
+            { key: 'packageBranch',  label: 'PAKET / BRANŞ',   align: 'center' },
+            { key: 'stats',          label: 'İSTATİSTİKLER',   align: 'center' },
+            { key: 'status',         label: 'DURUM',           align: 'center' },
           ]"
           :items="filteredPlans"
           :selected-ids="selectedPlans"
@@ -138,6 +146,17 @@
                  <Layers class="w-3.5 h-3.5" />
               </div>
               <span class="text-[0.65rem] font-black uppercase tracking-widest text-left">{{ item.member ? (item.member.fullName || 'İSİMSİZ ÜYE') : 'GENEL ŞABLON' }}</span>
+            </div>
+          </template>
+
+          <template #cell-instructorInfo="{ item }">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-[0.55rem] font-black uppercase rounded-sm">
+                 {{ (item.instructor?.fullName || instructors.find(i => String(i.id) === String(item.instructorId))?.fullName || 'E')?.charAt(0) }}
+              </div>
+              <span class="text-[0.65rem] font-black uppercase tracking-widest text-purple-300 text-left">
+                {{ item.instructor?.fullName || (instructors.find(i => String(i.id) === String(item.instructorId))?.fullName) || 'ATANMADI' }}
+              </span>
             </div>
           </template>
 

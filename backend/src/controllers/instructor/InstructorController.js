@@ -9,14 +9,16 @@ class InstructorController {
      */
     static getAll = catchAsync(async (req, res) => {
         const { branchId, companyId, role } = req.user;
-        const { page = 1, limit = 50, search } = req.query;
+        const { page = 1, limit = 50, search, branchId: filterBranchId } = req.query;
         const offset = (page - 1) * limit;
         const isSuperMaster = role === 'SUPER_MASTER';
 
         const where = { profileType: 'INSTRUCTOR' };
         if (!isSuperMaster) {
-            where.branchId = branchId;
-            where.companyId = companyId;
+            if (companyId) where.companyId = companyId;
+            if (filterBranchId) where.branchId = filterBranchId;
+        } else {
+            if (filterBranchId) where.branchId = filterBranchId;
         }
 
         if (search) {

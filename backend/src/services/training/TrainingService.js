@@ -12,7 +12,13 @@ class TrainingService {
         const offset = (page - 1) * limit;
 
         const isSuperMaster = role === 'SUPER_MASTER';
-        const where = isSuperMaster ? {} : { branchId, companyId };
+        const where = {};
+        if (!isSuperMaster) {
+            if (companyId) where.companyId = companyId;
+            if (filters.branchId) where.branchId = filters.branchId;
+        } else {
+            if (filters.branchId) where.branchId = filters.branchId;
+        }
 
         if (memberId) where.memberId = memberId;
         if (isTemplate === 'true') where.memberId = null;
@@ -70,6 +76,10 @@ class TrainingService {
         if (!finalInstructorId) {
             const instructor = await Member.findOne({ where: { userId: currentUser.id, profileType: 'INSTRUCTOR' } });
             finalInstructorId = instructor?.id;
+            if (!finalInstructorId && companyId) {
+                const anyInstructor = await Member.findOne({ where: { companyId, profileType: 'INSTRUCTOR' } });
+                finalInstructorId = anyInstructor?.id;
+            }
         }
         
         const plan = await TrainingPlan.create({
