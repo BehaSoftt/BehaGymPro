@@ -124,14 +124,20 @@ class MemberService {
         });
         console.log('[DEBUG] Attendance summary fetched. Total:', attendance.length);
 
+        const currentBalance = parseFloat(account?.balance || 0);
+        const prepaid = parseFloat(account?.prepaidBalance || 0);
+
+        const memberDebt = currentBalance > 0 ? currentBalance.toFixed(2) : '0.00';
+        const memberWallet = currentBalance < 0 ? Math.abs(currentBalance).toFixed(2) : (prepaid > 0 ? prepaid.toFixed(2) : '0.00');
+
         return {
             member,
             stats: {
                 activePlansCount,
                 remainingDays,
                 remainingPrivateSessions: totalRemainingSessions,
-                balance: account ? (parseFloat(account.balance) > 0 ? account.balance : '0.00') : '0.00',
-                totalDebt: account ? (parseFloat(account.balance) < 0 ? Math.abs(parseFloat(account.balance)).toFixed(2) : '0.00') : '0.00'
+                balance: memberWallet,
+                totalDebt: memberDebt
             },
             allPackages,
             recentSales,
