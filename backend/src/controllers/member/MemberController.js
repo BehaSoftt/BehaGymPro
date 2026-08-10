@@ -15,11 +15,13 @@ class MemberController {
             throw new AppError('Üye bulunamadı.', 404);
         }
 
+        const planWhere = { isActive: true, memberId: data.member.id };
+        if (data.member.packageId) {
+            planWhere[Op.or] = [{ memberId: data.member.id }, { packageId: data.member.packageId }];
+        }
+
         const trainingPlans = await TrainingPlan.findAll({
-            where: {
-                isActive: true,
-                [Op.or]: [{ memberId: data.member.id }, { packageId: data.member.packageId }]
-            },
+            where: planWhere,
             include: [{ model: Member, as: 'instructor', attributes: ['id', 'fullName', 'photo', 'instructorCode'] }]
         });
 
