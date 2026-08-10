@@ -38,7 +38,9 @@ class MemberController {
      * Yeni üye oluştur
      */
     static create = catchAsync(async (req, res) => {
+        console.log('🚀 [MEMBER_CREATE] Incoming payload:', JSON.stringify(req.body, null, 2));
         const member = await MemberService.createMember(req.body, req.user);
+        console.log('✅ [MEMBER_CREATE_SUCCESS] Created member ID:', member.id);
         res.status(201).json({ message: 'Üye başarıyla oluşturuldu.', member });
     });
 
@@ -46,7 +48,9 @@ class MemberController {
      * Üye bilgilerini güncelle
      */
     static update = catchAsync(async (req, res) => {
+        console.log('🔄 [MEMBER_UPDATE] Incoming payload for ID:', req.params.id, JSON.stringify(req.body, null, 2));
         const member = await MemberService.updateMember(req.params.id, req.body);
+        console.log('✅ [MEMBER_UPDATE_SUCCESS] Updated member ID:', req.params.id);
         res.json({ message: 'Üye bilgileri güncellendi.', member });
     });
 

@@ -506,17 +506,23 @@ const saveMember = async () => {
   try {
     loading.value = true
     const data = toRaw(newMember.value)
+    console.log('🚀 [FRONTEND_SAVE_MEMBER] Sending data:', JSON.stringify(data, null, 2))
+    
     if (editingId.value) {
-      await memberService.update(editingId.value, data)
+      const res = await memberService.update(editingId.value, data)
+      console.log('✅ [FRONTEND_SAVE_MEMBER_SUCCESS] Updated:', res)
       toast('Üye başarıyla güncellendi.')
     } else {
-      await memberService.create(data)
+      const res = await memberService.create(data)
+      console.log('✅ [FRONTEND_SAVE_MEMBER_SUCCESS] Created:', res)
       toast('Yeni üye başarıyla kaydedildi.')
     }
     await fetchMembers()
     closeForm()
   } catch (err) {
-    showAlertError('HATA', err.message || 'Kayıt işlemi başarısız.')
+    const errorMsg = err.response?.data?.message || err.message || 'Kayıt işlemi başarısız.'
+    console.error('❌ [FRONTEND_SAVE_MEMBER_ERROR]:', err.response?.data || err)
+    showAlertError('KAYIT HATASI', errorMsg)
   } finally {
     loading.value = false
   }

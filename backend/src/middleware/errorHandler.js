@@ -20,6 +20,9 @@ const errorHandler = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'ERROR';
 
+    console.error(`💥 [API ERROR] ${req.method} ${req.originalUrl} (${err.statusCode}):`, err.message);
+    if (err.errors) console.error('📌 [DETAILS]:', err.errors.map(e => e.message || e).join(', '));
+
     // Sequelize Hatalarını Yakala
     if (err.name === 'SequelizeUniqueConstraintError') {
         err.statusCode = 400;
