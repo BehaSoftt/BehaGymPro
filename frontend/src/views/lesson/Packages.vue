@@ -106,7 +106,7 @@
                     </span>
                  </div>
               </template>
-              <template #cell-priceValue="{ item }">
+              <template #cell-price="{ item }">
                  <span class="text-sm font-black text-white font-mono">₺{{ item.price }}</span>
               </template>
               <template #cell-status="{ item }">

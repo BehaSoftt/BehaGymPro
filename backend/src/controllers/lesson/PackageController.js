@@ -36,18 +36,21 @@ class PackageController {
 
             const { name } = packageData;
             const finalBranchId = packageData.branchId || branchId;
+            const { Branch } = require('../../models');
+            const branchObj = finalBranchId ? await Branch.findByPk(finalBranchId) : null;
+            const finalCompanyId = packageData.companyId || branchObj?.companyId || companyId;
 
-            console.log('[PackageController] Creating package with data:', packageData);
+            console.log('[PackageController] Creating package with data:', { ...packageData, branchId: finalBranchId, companyId: finalCompanyId });
 
             const existing = await MembershipPackage.findOne({ 
-                where: { name, branchId: finalBranchId, companyId } 
+                where: { name, branchId: finalBranchId, companyId: finalCompanyId } 
             });
             if (existing) throw new AppError('Bu isimde bir paket zaten tanımlı.', 400);
 
             const newPackage = await MembershipPackage.create({
                 ...packageData,
                 branchId: finalBranchId,
-                companyId,
+                companyId: finalCompanyId,
                 isActive: packageData.isActive !== undefined ? packageData.isActive : true,
                 // Sayısal alanların doğru tipte olduğundan emin ol
                 price: parseFloat(packageData.price) || 0,
