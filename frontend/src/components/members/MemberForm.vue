@@ -438,7 +438,7 @@
           <!-- Üyelik Paketi & Bitiş Tarihi -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-900/40 border border-emerald-500/30 shadow-xl">
              <BaseInput 
-               :modelValue="localMember.packageId"
+               :modelValue="localMember?.packageId || ''"
                @update:modelValue="handlePackageChange"
                type="select"
                label="ÜYELİK PAKETİ SEÇİMİ"
@@ -668,7 +668,8 @@ const localMember = computed({
 // Computeds for form logic
 const groupedSpecialties = computed(() => {
   const groups = { SALON: [], SAHA: [], HAVUZ: [], DIGER: [] }
-  specialties.value.forEach(s => {
+  const list = specialties?.value || []
+  list.forEach(s => {
     const type = s.facilityType || 'SALON'
     if (!groups[type]) groups[type] = []
     groups[type].push(s)
@@ -676,34 +677,37 @@ const groupedSpecialties = computed(() => {
   return groups
 })
 
-const beltSpecialties = computed(() => specialties.value.filter(s => s.hasBelts))
-const generalSpecialties = computed(() => specialties.value.filter(s => !s.hasBelts))
+const beltSpecialties = computed(() => (specialties?.value || []).filter(s => s.hasBelts))
+const generalSpecialties = computed(() => (specialties?.value || []).filter(s => !s.hasBelts))
 
 const availablePackages = computed(() => {
-  if (!packages.value || !Array.isArray(packages.value)) return []
-  if (!localMember.value.branchId) return packages.value
-  return packages.value.filter(p => !p.branchId || p.branchId === localMember.value.branchId)
+  const pkgs = packages?.value || []
+  if (!Array.isArray(pkgs)) return []
+  const currentBranchId = localMember.value?.branchId
+  if (!currentBranchId) return pkgs
+  return pkgs.filter(p => !p.branchId || p.branchId === currentBranchId)
 })
 
 const handlePackageChange = (pkgId) => {
-  const pkg = packages.value?.find(p => p.id === pkgId)
+  const pkgs = packages?.value || []
+  const pkg = pkgs.find(p => p.id === pkgId)
   if (pkg) {
-    let expDate = localMember.value.expiryDate
+    let expDate = localMember.value?.expiryDate
     if (pkg.durationMonths) {
-      const reg = localMember.value.registrationDate ? new Date(localMember.value.registrationDate) : new Date()
+      const reg = localMember.value?.registrationDate ? new Date(localMember.value.registrationDate) : new Date()
       reg.setMonth(reg.getMonth() + parseInt(pkg.durationMonths))
       expDate = reg.toISOString().split('T')[0]
     }
     localMember.value = {
-      ...localMember.value,
+      ...(localMember.value || {}),
       packageId: pkgId,
       membershipType: pkg.name || 'STANDART',
-      specialtyId: pkg.specialtyId || localMember.value.specialtyId,
+      specialtyId: pkg.specialtyId || localMember.value?.specialtyId,
       expiryDate: expDate
     }
   } else {
     localMember.value = {
-      ...localMember.value,
+      ...(localMember.value || {}),
       packageId: ''
     }
   }
