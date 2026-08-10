@@ -611,29 +611,47 @@ class SalesService {
             for (const payment of payments) {
                 const { method, amount } = payment;
 
-                // Create financial transaction (CREDIT)
-                const financialTransaction = await FinancialTransaction.create({
-                    financialAccountId,
-                    transactionType: 'CREDIT',
-                    amount,
-                    description: `Ürün Satışı`,
-                    category: 'PRODUCT_SALE',
-                    branchId,
-                    companyId,
-                    createdBy: userId,
-                    salesTransactionId
-                }, { transaction });
+                if (method === 'DEBT' || method === 'CARİ') {
+                    // DEBT SALE: Create DEBIT transaction to debit the member's Cari account
+                    await this.createDebitTransaction(
+                        financialAccountId,
+                        amount,
+                        salesTransactionId,
+                        branchId,
+                        companyId,
+                        userId,
+                        transaction
+                    );
 
-                // Create sales payment record
-                await SalesPayment.create({
-                    salesTransactionId,
-                    paymentMethod: method,
-                    amount,
-                    financialTransactionId: financialTransaction.id
-                }, { transaction });
+                    await SalesPayment.create({
+                        salesTransactionId,
+                        paymentMethod: 'CARİ',
+                        amount
+                    }, { transaction });
+                } else {
+                    // CASH / CREDIT_CARD / BANK_TRANSFER: Create CREDIT transaction (Receiving payment)
+                    const financialTransaction = await FinancialTransaction.create({
+                        financialAccountId,
+                        transactionType: 'CREDIT',
+                        amount,
+                        description: `Ürün Satışı`,
+                        category: 'PRODUCT_SALE',
+                        paymentMethod: method === 'CASH' ? 'CASH' : (method === 'CREDIT_CARD' ? 'CREDIT_CARD' : (method === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'OTHER')),
+                        branchId,
+                        companyId,
+                        createdBy: userId,
+                        salesTransactionId
+                    }, { transaction });
 
-                // Update account balances
-                await this.updateAccountBalances(account, method, amount, transaction);
+                    await SalesPayment.create({
+                        salesTransactionId,
+                        paymentMethod: method,
+                        amount,
+                        financialTransactionId: financialTransaction.id
+                    }, { transaction });
+
+                    await this.updateAccountBalances(account, method, amount, transaction);
+                }
             }
         } catch (err) {
             console.error('❌ Ödeme işleme hatası:', err.message);
@@ -723,9 +741,8 @@ class SalesService {
                 updateData.prepaidBalance = sequelize.literal(`"prepaidBalance" - ${prepaidUsed}`);
             }
 
-            // Important: We ALWAYS subtract the FULL amount from balance and totalDebit
-            // because the PREPAID_LOAD (CREDIT) already added the money to the balance.
-            updateData.balance = sequelize.literal(`"balance" - ${amountFloat}`);
+            // DEBIT (Borçlandırma) INCREASES the member's debt balance (+)
+            updateData.balance = sequelize.literal(`"balance" + ${amountFloat}`);
             updateData.totalDebit = sequelize.literal(`"totalDebit" + ${amountFloat}`);
 
             await account.update(updateData, { transaction });
