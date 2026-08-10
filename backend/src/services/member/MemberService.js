@@ -457,6 +457,34 @@ class MemberService {
             }
         });
 
+        // MEMBERSHIP PACKAGE SYNC: If packageId changed, create active MemberPackage
+        if (updateData.packageId && updateData.packageId !== member.packageId) {
+            const pkg = await MembershipPackage.findByPk(updateData.packageId);
+            if (pkg) {
+                const startDate = updateData.registrationDate || member.registrationDate || new Date().toISOString().split('T')[0];
+                let expDate = updateData.expiryDate;
+                if (!expDate && pkg.durationMonths) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + pkg.durationMonths);
+                    expDate = d.toISOString().split('T')[0];
+                }
+                await MemberPackage.create({
+                    memberId: member.id,
+                    packageId: pkg.id,
+                    startDate,
+                    expiryDate: expDate,
+                    status: 'ACTIVE',
+                    paymentStatus: 'PAID',
+                    remainingSessions: pkg.sessionCount || 0,
+                    companyId: member.companyId,
+                    branchId: member.branchId
+                });
+                if (expDate) {
+                    updateData.expiryDate = expDate;
+                }
+            }
+        }
+
         const oldGroupId = member.sportGroupId;
         await member.update(updateData);
         const newGroupId = member.sportGroupId;
