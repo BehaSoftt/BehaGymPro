@@ -116,7 +116,7 @@
           <template #icon><XCircle class="w-5 h-5" /></template>
         </BaseButton>
         <div class="w-px h-8 bg-slate-800"></div>
-        <BaseButton variant="success" size="icon" square @click="$emit('save', form)" :disabled="isSaveDisabled" :title="saveTitle">
+        <BaseButton variant="success" size="icon" square @click="handleSave" :disabled="isSaveDisabled" :title="saveTitle">
           <template #icon><CheckCircle class="w-5 h-5" /></template>
         </BaseButton>
       </div>
@@ -181,14 +181,17 @@ const limitExceeded = computed(() => {
 })
 
 const debtExceeded = computed(() => {
-  if (form.value.transactionType === 'CREDIT' && form.value.category === 'DEBT_COLLECTION') {
-    const currentDebt = Math.abs(Math.min(0, parseFloat(props.account?.balance || 0)))
-    return parseFloat(form.value.amount || 0) > currentDebt + 0.01 // Small buffer for decimals
+  if (form.value.transactionType === 'CREDIT' && (form.value.category === 'DEBT_COLLECTION' || form.value.category === 'MEMBERSHIP')) {
+    const rawBalance = parseFloat(props.account?.balance || 0)
+    const currentDebt = Math.abs(rawBalance)
+    if (currentDebt === 0) return false
+    return parseFloat(form.value.amount || 0) > currentDebt + 1.00
   }
   return false
 })
 
 const isSaveDisabled = computed(() => {
+  if (!form.value.amount || parseFloat(form.value.amount) <= 0) return true
   if (form.value.category === 'PRODUCT_SALE' && 
       form.value.transactionType === 'DEBIT' && 
       parseFloat(props.account?.debtLimit || 0) > 0 && 
@@ -203,8 +206,13 @@ const isSaveDisabled = computed(() => {
 
 const saveTitle = computed(() => {
   if (debtExceeded.value) return 'TAHSİLAT TUTARI MEVCUT BORCU AŞAMAZ (FAZLASINI ÖN ÖDEME OLARAK GİRİN)'
-  return isSaveDisabled.value ? 'LİMİT AŞILDIĞI İÇİN İŞLEM YAPILAMAZ' : 'İşlemi Onayla ve Kaydet'
+  return isSaveDisabled.value ? 'LÜTFEN TUTAR VE İŞLEM BİLGİLERİNİ GİRİN' : 'İşlemi Onayla ve Kaydet'
 })
+
+const handleSave = () => {
+  console.log('🚀 [TRANSACTION_FORM_SUBMIT] Emitting save:', JSON.stringify(form.value, null, 2))
+  emit('save', { ...form.value })
+}
 
 const onTransactionTypeChange = () => {
   form.value.usePrepaid = false

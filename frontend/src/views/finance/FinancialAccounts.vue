@@ -975,8 +975,10 @@ const openTransactionModal = (account) => {
 }
 
 const addTransaction = async (formData) => {
+  console.log('🚀 [FRONTEND_ADD_TRANSACTION] Submitting payload:', JSON.stringify(formData, null, 2))
   try {
     const res = await financialService.createTransaction({ ...formData, financialAccountId: selectedAccount.value.id })
+    console.log('✅ [FRONTEND_ADD_TRANSACTION_SUCCESS]:', res)
     let msg = 'İşlem başarıyla eklendi.'
     if (res.prepaidUsed && Number(res.prepaidUsed) > 0) msg += ` (Ön ödemeden ₺${Number(res.prepaidUsed).toFixed(2)} düşüldü)`
     
@@ -984,7 +986,9 @@ const addTransaction = async (formData) => {
     showTransactionModal.value = false
     await refreshData()
   } catch (err) {
-    showAlertError('HATA', err.message || 'İşlem eklenemedi.')
+    const errorMsg = err.response?.data?.message || err.message || 'İşlem eklenemedi.'
+    console.error('❌ [FRONTEND_ADD_TRANSACTION_ERROR]:', err.response?.data || err)
+    showAlertError('HATA', errorMsg)
   }
 }
 
