@@ -106,8 +106,8 @@
                 <div class="p-3 bg-slate-950/50 border border-slate-700/50 space-y-1.5 shadow-inner">
                   <div class="flex justify-between items-center">
                     <span class="text-[0.6rem] text-slate-500 font-bold uppercase tracking-widest font-mono">TOPLAM:</span>
-                    <span class="text-sm font-black transition-colors" :class="parseFloat(account.balance) >= 0 ? 'text-emerald-400' : 'text-rose-400'">
-                      ₺ {{ parseFloat(account.balance) > 0 ? '+' : '' }}{{ parseFloat(account.balance).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}
+                    <span class="text-sm font-black transition-colors" :class="parseFloat(account.balance) > 0 ? 'text-rose-400' : (parseFloat(account.balance) < 0 ? 'text-emerald-400' : 'text-slate-400')">
+                      ₺ {{ Math.abs(parseFloat(account.balance || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }} {{ parseFloat(account.balance) > 0 ? 'BORÇ' : (parseFloat(account.balance) < 0 ? 'ALACAK' : '') }}
                     </span>
                   </div>
                   <!-- Pocket Splits -->
@@ -253,9 +253,13 @@
               </template>
 
               <template #cell-balance="{ item }">
-                <div class="px-3 py-1.5 bg-slate-950 border border-slate-800 shadow-lg w-[140px] flex items-center justify-center mx-auto">
-                  <p :class="parseFloat(item.balance) >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="text-[0.9rem] font-black tracking-tighter italic">
-                    ₺ {{ parseFloat(item.balance) > 0 ? '+' : '' }}{{ parseFloat(item.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}
+                <div class="px-3 py-1.5 bg-slate-950 border shadow-lg w-[150px] flex items-center justify-center mx-auto"
+                     :class="parseFloat(item.balance) > 0 ? 'border-rose-500/30 bg-rose-500/10' : (parseFloat(item.balance) < 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-slate-800')">
+                  <p :class="parseFloat(item.balance) > 0 ? 'text-rose-400 font-bold' : (parseFloat(item.balance) < 0 ? 'text-emerald-400 font-bold' : 'text-slate-400')" 
+                     class="text-[0.8rem] font-black tracking-tighter italic">
+                    <span v-if="parseFloat(item.balance) > 0">₺ {{ Math.abs(parseFloat(item.balance)).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }} (BORÇ)</span>
+                    <span v-else-if="parseFloat(item.balance) < 0">₺ {{ Math.abs(parseFloat(item.balance)).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }} (ALACAK)</span>
+                    <span v-else>₺ 0,00</span>
                   </p>
                 </div>
               </template>
