@@ -39,9 +39,22 @@
               </template>
 
               <template #cell-description="{ item }">
-                <div class="flex flex-col gap-0.5">
+                <div class="flex flex-col gap-1 text-left">
                   <span class="text-[0.65rem] font-black text-rose-500 uppercase tracking-wider">{{ getCategoryLabel(item.category) }}</span>
                   <span class="text-xs font-semibold text-slate-100 leading-relaxed uppercase tracking-tight">{{ item.description || '-' }}</span>
+                  
+                  <!-- PRODUCT SALES ITEMS DETAILS -->
+                  <div v-if="item.salesTransaction?.items && item.salesTransaction.items.length > 0" class="flex flex-wrap gap-1.5 mt-1">
+                    <span 
+                      v-for="subItem in item.salesTransaction.items" 
+                      :key="subItem.id"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 border border-slate-700/80 rounded-md text-[0.65rem] font-bold text-indigo-300 shadow-sm"
+                    >
+                      <span class="text-indigo-400 font-mono">📦 {{ subItem.productName }}</span>
+                      <span class="text-slate-400 font-black">x{{ subItem.quantity }}</span>
+                      <span class="text-emerald-400 font-mono">(₺{{ parseFloat(subItem.lineTotal || (subItem.quantity * subItem.unitPrice)).toFixed(2) }})</span>
+                    </span>
+                  </div>
                 </div>
               </template>
 

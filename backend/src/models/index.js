@@ -351,6 +351,8 @@ SalesTransaction.belongsTo(FinancialAccount, { foreignKey: 'financialAccountId',
 FinancialAccount.hasMany(SalesTransaction, { foreignKey: 'financialAccountId', as: 'salesTransactions' });
 
 SalesPayment.belongsTo(FinancialTransaction, { foreignKey: 'financialTransactionId', as: 'financialTransaction' });
+FinancialTransaction.belongsTo(SalesTransaction, { foreignKey: 'salesTransactionId', as: 'salesTransaction' });
+SalesTransaction.hasMany(FinancialTransaction, { foreignKey: 'salesTransactionId', as: 'financialTransactions' });
 
 SalesTransaction.belongsTo(Branch, { foreignKey: 'branchId', as: 'Branch' });
 SalesTransaction.belongsTo(Company, { foreignKey: 'companyId', as: 'Company' });

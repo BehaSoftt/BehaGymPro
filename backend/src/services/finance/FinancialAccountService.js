@@ -277,15 +277,23 @@ class FinancialAccountService {
      */
     static async getAccountDetail(id) {
         const startTime = Date.now();
+        const { SalesTransaction, SalesItem } = require('../../models');
         const account = await FinancialAccount.findByPk(id, {
             include: [
                 { model: Branch, as: 'Branch', attributes: ['name'] },
                 {
                     model: FinancialTransaction,
                     as: 'transactions',
-                    limit: 20,
+                    limit: 50,
                     order: [['transactionDate', 'DESC']],
-                    include: [{ model: User, as: 'creator', attributes: ['username'] }]
+                    include: [
+                        { model: User, as: 'creator', attributes: ['username'] },
+                        {
+                            model: SalesTransaction,
+                            as: 'salesTransaction',
+                            include: [{ model: SalesItem, as: 'items' }]
+                        }
+                    ]
                 }
             ]
         });
