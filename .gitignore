@@ -33,9 +33,11 @@ publish/
 publish_schema.json
 publish_schemabak.json
 
-# WhatsApp session cache
+# WhatsApp session files (very large, Chrome cache etc.)
+sessions/
+backend/sessions/
 .wwebjs_auth/
 .wwebjs_cache/
-
-# Puppeteer
 .local-chromium/
+**/Cache_Data/
+**/Code Cache/
