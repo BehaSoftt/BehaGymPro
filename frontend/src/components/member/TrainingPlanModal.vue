@@ -181,7 +181,10 @@ const props = defineProps({
   completionRate: Number,
   member: Object,
   latestMeasurement: Object,
-  measurements: Array,
+  measurements: {
+    type: [Array, Object],
+    default: () => []
+  },
   remainingWeight: [String, Number],
   progressPercent: Number,
   loadingPlan: Boolean,

@@ -120,7 +120,10 @@ import BaseBadge from '../base/BaseBadge.vue'
 
 defineProps({
   latestMeasurement: Object,
-  measurements: Array,
+  measurements: {
+    type: [Array, Object],
+    default: () => []
+  },
   completionRate: Number,
   getBmiClass: Function,
   getBMIStatus: Function

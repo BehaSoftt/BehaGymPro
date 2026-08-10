@@ -8,7 +8,7 @@ router.get('/instructor/dashboard', authMiddleware, authorize(['ADMIN', 'STAFF',
 router.post('/instructor/override', authMiddleware, authorize(['ADMIN', 'STAFF', 'INSTRUCTOR', 'EĞİTMEN', 'MASTER', 'MUDUR', 'RECEPTIONIST', 'SUPER_MASTER']), TrainingPlanController.overrideLogActivity);
 
 // Logging Routes
-router.get('/logs/all', authMiddleware, authorize(['ADMIN', 'STAFF', 'INSTRUCTOR', 'EĞİTMEN', 'MASTER', 'MUDUR', 'RECEPTIONIST', 'SUPER_MASTER']), TrainingPlanController.getLogs);
+router.get('/logs/all', authMiddleware, authorize(['ADMIN', 'STAFF', 'INSTRUCTOR', 'EĞİTMEN', 'MASTER', 'MUDUR', 'RECEPTIONIST', 'SUPER_MASTER', 'MEMBER']), TrainingPlanController.getLogs);
 router.post('/log/activity', authMiddleware, TrainingPlanController.logActivity);
 router.post('/log/batch-activity', authMiddleware, TrainingPlanController.logBatchActivity);
 

@@ -255,8 +255,9 @@ const fetchDashboardData = async (isBackground = false) => {
 
 const fetchMeasurements = async (memberId) => {
   try {
-    measurements.value = await measurementService.getByMemberId(memberId)
-  } catch (err) { console.error(err) }
+    const res = await measurementService.getByMemberId(memberId)
+    measurements.value = Array.isArray(res) ? res : (res?.measurements || [])
+  } catch (err) { measurements.value = [] }
 }
 
 const fetchNutritionPlan = async (memberId) => {
