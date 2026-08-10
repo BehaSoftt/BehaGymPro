@@ -504,9 +504,20 @@ const handlePhotoUpload = async (file) => {
 }
 
 const saveMember = async () => {
+  const data = toRaw(newMember.value)
+  
+  // 1. Zorunlu Alan Kontrolleri (Ön Yüz Doğrulaması)
+  if (!data.fullName || !data.fullName.trim()) {
+    warning('EKSİK BİLGİ UYARISI', 'Lütfen üyenin Ad ve Soyad bilgisini giriniz.')
+    return
+  }
+  if (!data.branchId) {
+    warning('EKSİK BİLGİ UYARISI', 'Lütfen bir şube seçiniz.')
+    return
+  }
+
   try {
     loading.value = true
-    const data = toRaw(newMember.value)
     console.log('🚀 [FRONTEND_SAVE_MEMBER] Sending data:', JSON.stringify(data, null, 2))
     
     if (editingId.value) {
@@ -521,9 +532,30 @@ const saveMember = async () => {
     await fetchMembers()
     closeForm()
   } catch (err) {
-    const errorMsg = err.response?.data?.message || err.message || 'Kayıt işlemi başarısız.'
     console.error('❌ [FRONTEND_SAVE_MEMBER_ERROR]:', err.response?.data || err)
-    showAlertError('KAYIT HATASI', errorMsg)
+    
+    const backendMsg = err.response?.data?.message || err.message || ''
+    const lowerMsg = String(backendMsg).toLowerCase()
+    
+    // Kullanıcı Dostu Türkçe SweetAlert Hata Mesajları
+    if (lowerMsg.includes('telefon') || lowerMsg.includes('phone') || lowerMsg.includes('zaten mevcut') || lowerMsg.includes('unique')) {
+      warning(
+        'MÜKERRER KAYIT UYARISI', 
+        `"${data.phone || 'Girdiğiniz'}" telefon numarasına ait bir üye sistemde zaten kayıtlıdır. Lütfen üye listesini kontrol ediniz.`
+      )
+    } else if (lowerMsg.includes('e-posta') || lowerMsg.includes('email')) {
+      warning(
+        'E-POSTA UYARISI',
+        'Bu e-posta adresi başka bir üye veya kullanıcı tarafından kullanılmaktadır.'
+      )
+    } else if (lowerMsg.includes('ad soyad') || lowerMsg.includes('cinsiyet') || lowerMsg.includes('şube')) {
+      warning(
+        'EKSİK BİLGİ UYARISI',
+        'Lütfen zorunlu alanları (Ad Soyad, Cinsiyet, Şube) eksiksiz doldurunuz.'
+      )
+    } else {
+      showAlertError('KAYIT İŞLEMİ BAŞARISIZ', backendMsg || 'Üye kaydı sırasında bir sorun oluştu. Lütfen tekrar deneyiniz.')
+    }
   } finally {
     loading.value = false
   }
