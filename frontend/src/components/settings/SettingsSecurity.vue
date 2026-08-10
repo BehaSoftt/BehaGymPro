@@ -203,10 +203,11 @@
                       type="select" 
                       label="Hesap Türü"
                       :options="[
-                         { value: 'ADMIN', label: 'Yönetici' },
-                         { value: 'RECEPTIONIST', label: 'Personel' },
+                         { value: 'ADMIN', label: 'Şirket Yöneticisi (Admin)' },
+                         { value: 'BRANCH_MASTER', label: 'Şube Yöneticisi' },
+                         { value: 'RECEPTIONIST', label: 'Personel / Resepsiyon' },
                          { value: 'USER', label: 'Kullanıcı' },
-                         { value: 'EĞİTMEN', label: 'Eğitmen' },
+                         { value: 'INSTRUCTOR', label: 'Eğitmen' },
                          { value: 'MEMBER', label: 'Üye' },
                          { value: 'TERMINAL', label: 'Terminal' }
                       ]"
@@ -640,7 +641,8 @@ const selectUser = (user) => {
 
 const openUserForm = () => {
   newPassword.value = ''
-  const role = securitySubTab.value === 'instructors' ? 'INSTRUCTOR' : 
+  const role = securitySubTab.value === 'management' ? 'ADMIN' : 
+               securitySubTab.value === 'instructors' ? 'INSTRUCTOR' : 
                securitySubTab.value === 'staff_sub' ? 'RECEPTIONIST' : 
                securitySubTab.value === 'users_sub' ? 'USER' : 
                securitySubTab.value === 'terminals_sub' ? 'TERMINAL' : 'MEMBER'
