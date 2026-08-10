@@ -1,0 +1,41 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build / dist
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Temporary / scratch files
+tmp/
+archive/
+*.patch
+*.sql
+publish/
+publish_schema.json
+publish_schemabak.json
+
+# WhatsApp session cache
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Puppeteer
+.local-chromium/

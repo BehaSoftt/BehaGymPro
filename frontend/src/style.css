@@ -1,0 +1,395 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ==========================================================================
+     GLOBAL UI DESIGN TOKEN SYSTEM — BehaGymPro
+     Tüm projedeki stil değerlerini tek yerden yönetin.
+     BaseFont panelinden (Ayarlar → Yönetim → Yazı Tipi Stili) düzenlenebilir.
+     ========================================================================== */
+
+  /* ── Font Families ──────────────────────────────────────────────────────── */
+  --ui-font-main: 'JetBrains Mono', monospace;
+  --ui-font-alt: 'Inter', sans-serif;
+
+  /* ── Base Typography ────────────────────────────────────────────────────── */
+  --ui-font-size: 11px;
+  --ui-font-weight: 400;
+  --ui-font-weight-bold: 600;
+  --ui-letter-spacing: 0.15em;
+
+  /* ── Component Font Sizes ───────────────────────────────────────────────── */
+  --ui-font-size-label: 11px;
+  --ui-font-size-input: 11px;
+  --ui-font-size-placeholder: 11px;
+  --ui-font-size-card-title: 11px;
+  --ui-font-size-modal-title: 11px;
+  --ui-font-size-table-head: 11px;
+  --ui-font-size-badge: 11px;
+  --ui-font-size-button: 11px;
+  --ui-font-size-span: 10px;
+
+  /* ── Text Colors ────────────────────────────────────────────────────────── */
+  --ui-color-text-main: #f8fafc;
+  --ui-color-text-muted: #64748b;
+  --ui-color-text-accent: #e11d48;
+  --ui-color-text-indigo: #818cf8;
+  --ui-color-text-emerald: #10b981;
+
+  /* ── Table Tokens ───────────────────────────────────────────────────────── */
+  --ui-table-header-py: 12px;
+  --ui-table-row-py: 10px;
+  --ui-table-cell-fs: 11px;
+  --ui-table-header-bg: rgba(2, 6, 23, 0.95);
+  --ui-table-row-bg: transparent;
+  --ui-table-row-hover-bg: rgba(30, 41, 59, 0.8);
+  --ui-table-row-border: rgba(244, 63, 94, 0.15);
+  --ui-table-col-divider: rgba(244, 63, 94, 0.05);
+  --ui-table-selected-bg: rgba(225, 29, 72, 0.15);
+
+  /* ── Button Sizes ───────────────────────────────────────────────────────── */
+  --ui-btn-sm-h: 28px;
+  --ui-btn-md-h: 36px;
+  --ui-btn-lg-h: 44px;
+  --ui-btn-sm-px: 12px;
+  --ui-btn-md-px: 20px;
+  --ui-btn-lg-px: 28px;
+  --ui-btn-radius: 0px;
+  /* 0 = sharp, >0 = rounded */
+
+  /* ── Form Controls ──────────────────────────────────────────────────────── */
+  --ui-input-h: 36px;
+  --ui-select-h: 36px;
+  --ui-textarea-rows: 3;
+  --ui-checkbox-size: 16px;
+  --ui-switch-w: 44px;
+  --ui-switch-h: 24px;
+  --ui-switch-thumb: 18px;
+
+  /* ── PDF / Print Output ─────────────────────────────────────────────────── */
+  --ui-pdf-title-size: 18px;
+  --ui-pdf-h1-size: 14px;
+  --ui-pdf-h2-size: 12px;
+  --ui-pdf-body-size: 10px;
+  --ui-pdf-small-size: 8px;
+  --ui-pdf-line-height: 1.6;
+  --ui-pdf-margin: 20px;
+
+  /* ── Media / Images ─────────────────────────────────────────────────────── */
+  --ui-avatar-size: 40px;
+  --ui-avatar-lg-size: 64px;
+  --ui-card-img-h: 180px;
+  --ui-thumb-size: 80px;
+
+  /* ── QR Code ────────────────────────────────────────────────────────────── */
+  --ui-qr-size: 150px;
+  --ui-qr-padding: 8px;
+
+  /* ── Theme / Background Colors ──────────────────────────────────────────── */
+  --ui-bg-page: #020617;
+  --ui-bg-primary: #0f172a;
+  --ui-bg-secondary: #1e293b;
+  --ui-bg-card: #0f172a;
+  --ui-bg-input: #020617;
+  --ui-border-color: rgba(51, 65, 85, 1);
+  --ui-border-subtle: rgba(51, 65, 85, 0.5);
+  --ui-border-accent: rgba(244, 63, 94, 0.3);
+
+  /* ── Neon Glow Tokens ───────────────────────────────────────────────────── */
+  --neon-indigo: #6366f1;
+  --neon-emerald: #10b981;
+  --neon-rose: #f43f5e;
+  --neon-cyan: #06b6d4;
+  --neon-glow-primary: 0 0 15px rgba(99, 102, 241, 0.4);
+  --neon-glow-success: 0 0 15px rgba(16, 185, 129, 0.4);
+  --neon-glow-error: 0 0 15px rgba(244, 63, 94, 0.4);
+  --neon-shadow: drop-shadow(0 0 8px currentColor);
+
+  /* ── System ─────────────────────────────────────────────────────────────── */
+  font-family: var(--ui-font-main);
+  line-height: 1.5;
+  font-weight: var(--ui-font-weight);
+  letter-spacing: -0.02em;
+  background-color: #0f172a;
+  color: var(--ui-color-text-main);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  cursor: auto !important;
+}
+
+
+/* ==========================================================================
+   COMPONENT TYPOGRAPHY UTILITIES
+   Bileşenlerde kullanılacak yardımcı sınıflar.
+   ========================================================================== */
+
+.text-ui-main {
+  color: var(--ui-color-text-main);
+}
+
+.text-ui-muted {
+  color: var(--ui-color-text-muted);
+}
+
+.text-ui-accent {
+  color: var(--ui-color-text-accent);
+}
+
+.text-ui-base {
+  font-size: var(--ui-font-size);
+}
+
+.text-ui-label {
+  font-size: var(--ui-font-size-label);
+}
+
+.text-ui-input {
+  font-size: var(--ui-font-size-input);
+}
+
+.text-ui-card-title {
+  font-size: var(--ui-font-size-card-title);
+}
+
+.text-ui-modal-title {
+  font-size: var(--ui-font-size-modal-title);
+}
+
+.text-ui-table-head {
+  font-size: var(--ui-font-size-table-head);
+}
+
+.text-ui-badge {
+  font-size: var(--ui-font-size-badge);
+}
+
+.text-ui-button {
+  font-size: var(--ui-font-size-button);
+}
+
+.text-ui-span {
+  font-size: var(--ui-font-size-span);
+}
+
+.font-ui-normal {
+  font-weight: var(--ui-font-weight) !important;
+}
+
+.font-ui-bold {
+  font-weight: var(--ui-font-weight-bold) !important;
+}
+
+.tracking-ui {
+  letter-spacing: var(--ui-letter-spacing);
+}
+
+/* System Settings Override */
+* {
+  font-family: var(--ui-font-main) !important;
+}
+
+/* Global Typography Overrides */
+* {
+  font-style: normal !important;
+  /* İtalik yazıları tamamen kaldırır */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+b,
+strong,
+.font-normal,
+.font-medium {
+  font-weight: 400 !important;
+  /* Kalın yazıları "normal/orta" seviyesine çeker */
+}
+
+html,
+body {
+  cursor: auto !important;
+  background-color: #0f172a;
+}
+
+html {
+  /* 120% kaldırıldı — CSS değişken sistemi kullanılıyor.
+     Artık rem yerine px tabanlı --ui-* token sistemi tüm boyutları yönetir. */
+  font-size: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0f172a;
+  cursor: default !important;
+  caret-color: #818cf8;
+}
+
+input,
+textarea,
+select {
+  cursor: text !important;
+}
+
+button,
+a {
+  cursor: pointer !important;
+  touch-action: manipulation;
+}
+
+/* CUSTOM SCROLLBARS */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Responsive Overrides */
+@media (max-width: 640px) {
+  .swal2-popup {
+    font-size: 0.8rem !important;
+    width: 90% !important;
+  }
+}
+
+/* ==========================================================================
+   USER REQUEST OVERRIDES (V2: Global Caps Reset & Snow White Labels)
+   ========================================================================== */
+
+/* 1. Global Caps Reset: Tüm projedeki zorunlu büyük harf (uppercase) kaldırıldı. 
+   Inputlar dahil hiçbir metin alanı artık yazdığınız harf boyutunu değiştirmez. */
+* {
+  text-transform: none !important;
+}
+
+/* ==========================================================================
+   NEON GLOBAL DESIGN SYSTEM
+   ========================================================================== */
+
+.neon-border-blue {
+  border: 2px solid var(--neon-cyan) !important;
+  box-shadow: var(--neon-glow-primary) !important;
+}
+
+.neon-border-rose {
+  border: 2px solid var(--neon-rose) !important;
+  box-shadow: var(--neon-glow-error) !important;
+}
+
+.neon-card {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 2px solid rgba(99, 102, 241, 0.3) !important;
+  box-shadow: var(--neon-glow-primary) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.neon-card:hover {
+  border-color: var(--neon-indigo) !important;
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.4) !important;
+}
+
+.neon-text-emerald {
+  color: var(--neon-emerald) !important;
+  filter: var(--neon-shadow);
+}
+
+.neon-text-indigo {
+  color: var(--neon-indigo) !important;
+  filter: var(--neon-shadow);
+}
+
+/* 2. Snow White Labels: Tüm label ve başlık alanları kristal beyaz (#ffffff) yapıldı. */
+label,
+.text-ui-label,
+.uppercase,
+[class*="uppercase"],
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-transform: none !important;
+  color: #ffffff !important;
+}
+
+/* 3. Input Reset: Yazma alanlarında küçük harfin büyük harfe dönüşmesi engellendi. */
+input,
+textarea,
+select,
+.text-ui-input,
+input::placeholder,
+textarea::placeholder {
+  text-transform: none !important;
+}
+
+/* ==========================================================================
+   DROPDOWN NEON GLOW OVERRIDES
+   ========================================================================== */
+option {
+  color: var(--ui-select-color, #ffffff) !important;
+  background-color: #020617 !important;
+  font-size: var(--ui-select-fs, 11px) !important;
+  text-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+select {
+  color: var(--ui-select-color, #ffffff) !important;
+  font-size: var(--ui-select-fs, 11px) !important;
+  text-shadow: none !important;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* 4. Number Input Spinner Removal: Arttırma/Azaltma butonlarını kaldırır. */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "behagym-pro",
+  "version": "1.0.0",
+  "scripts": {
+    "git:push": "node dev_utils/git-push.js",
+    "git:auto": "node dev_utils/git-auto-push.js",
+    "publish": "node dev_utils/create-publish.js",
+    "migrate": "npm run migrate --prefix backend"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.6"
+  },
+  "devDependencies": {
+    "chokidar": "^3.5.3",
+    "fs-extra": "^11.2.0",
+    "pkg": "^5.8.1"
+  }
+}

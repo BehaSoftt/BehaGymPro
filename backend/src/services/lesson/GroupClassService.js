@@ -1,0 +1,133 @@
+const { GroupClass, GroupClassMember, Member, User, SportSpecialty, Attendance, Branch, Company } = require('../../models');
+const WhatsAppService = require('../notifications/WhatsAppService');
+
+class GroupClassService {
+    /**
+     * Tüm grup derslerini filtreleyerek getirir
+     */
+    static async getAllGroups(user, filters = {}) {
+        const { branchId, companyId, role } = user;
+        const { page = 1, limit = 50, search } = filters;
+        const { Op } = require('sequelize');
+        const offset = (page - 1) * limit;
+        const isSuperMaster = role === 'SUPER_MASTER';
+        const where = isSuperMaster ? { companyId } : { branchId, companyId };
+
+        if (search) {
+            where.name = { [Op.iLike]: `%${search}%` };
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { count, rows: groups } = await GroupClass.findAndCountAll({
+            where,
+            include: [
+                { model: SportSpecialty, as: 'specialty', attributes: ['name'] },
+                { model: Member, as: 'instructor', attributes: ['id', 'fullName', 'photo'], include: [{ model: User, as: 'user', attributes: ['username'] }] },
+                { model: Member, as: 'enrolledMembers', attributes: ['id', 'fullName', 'photo'], through: { attributes: [] } },
+                { model: Attendance, as: 'attendanceRecords', where: { date: today }, required: false }
+            ],
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            distinct: true,
+            order: [['createdAt', 'DESC']]
+        });
+
+        return {
+            total: count,
+            pages: Math.ceil(count / limit),
+            currentPage: parseInt(page),
+            groups
+        };
+    }
+
+    /**
+     * Gruba toplu üye kaydı yapar
+     */
+    static async enrollMembers(groupClassId, memberIds) {
+        const { Op } = require('sequelize');
+        const group = await GroupClass.findByPk(groupClassId);
+        if (!group) throw new Error('Grup bulunamadı.');
+
+        const timeOverlap = {
+            [Op.or]: [
+                { startTime: { [Op.lt]: group.endTime }, endTime: { [Op.gt]: group.startTime } }
+            ]
+        };
+
+        for (const memberId of memberIds) {
+            const member = await Member.findByPk(memberId);
+            if (!member) continue;
+
+            // 1. Üyenin bu saatte başka bir BİREYSEL dersi var mı?
+            const lessonOver = await LessonSchedule.findOne({
+                where: {
+                    memberId,
+                    isActive: true,
+                    dayOfWeek: { [Op.in]: group.days },
+                    ...timeOverlap
+                },
+                include: [{ model: SportSpecialty, as: 'specialty', attributes: ['name'] }]
+            });
+            if (lessonOver) {
+                throw new Error(`ÇAKIŞMA: ${member.fullName} isimli üyenin bu saatte "${lessonOver.specialty?.name || 'Başka Bir'}" dersi var.`);
+            }
+
+            // 2. Üyenin bu saatte başka bir GRUP dersi var mı?
+            const groupOver = await GroupClassMember.findAll({
+                where: { memberId, groupClassId: { [Op.ne]: groupClassId } },
+                include: [{
+                    model: GroupClass,
+                    as: 'groupClass',
+                    where: {
+                        status: 'ACTIVE',
+                        days: { [Op.overlap]: group.days }, // Any day match
+                        ...timeOverlap
+                    }
+                }]
+            });
+
+            if (groupOver.length > 0) {
+                // Find exact day overlap for better error message
+                const actualOver = groupOver.find(go => 
+                    go.groupClass.days.some(d => group.days.includes(d))
+                );
+                if (actualOver) throw new Error(`ÇAKIŞMA: ${member.fullName} zaten bu saatte "${actualOver.groupClass.name}" grubuna kayıtlı.`);
+            }
+        }
+
+        const enrollments = memberIds.map(memberId => ({
+            groupClassId,
+            memberId,
+            status: 'ENROLLED'
+        }));
+        return await GroupClassMember.bulkCreate(enrollments, { ignoreDuplicates: true });
+    }
+
+    /**
+     * Grup üyelerine toplu mesaj gönderir
+     */
+    static async sendMassMessage(groupClassId, message) {
+        const group = await GroupClass.findByPk(groupClassId, {
+            include: [{ model: Member, as: 'enrolledMembers' }, { model: Branch, as: 'Branch', include: ['Company'] }]
+        });
+
+        if (!group) throw new Error('Grup bulunamadı.');
+        const branch = group.Branch;
+        if (!branch?.isWhatsAppEnabled) throw new Error('Bu şubede WhatsApp servisi aktif değil.');
+
+        const identity = WhatsAppService.resolveIdentity(branch, branch.Company);
+        let sentCount = 0;
+
+        for (const member of group.enrolledMembers) {
+            if (member.phone) {
+                const finalMsg = WhatsAppService.getCustomGroupMessage(message, identity.companyName, identity.branchName, identity.phone);
+                await WhatsAppService.sendAutoMessage(member.phone, finalMsg).catch(e => console.error(e));
+                sentCount++;
+            }
+        }
+        return sentCount;
+    }
+}
+
+module.exports = GroupClassService;
