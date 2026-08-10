@@ -182,10 +182,16 @@ class FinancialAccountService {
     static async getAllAccounts(filters, user) {
         const startTime = Date.now();
         const { branchId, companyId, role } = user;
-        const { entityType, isActive, search, category, paymentMethod, page = 1, limit = 50 } = filters;
+        const { entityType, isActive, search, category, paymentMethod, page = 1, limit = 50, branchId: filterBranchId } = filters;
         const { Op } = require('sequelize');
 
-        const whereClause = role === 'SUPER_MASTER' ? { companyId } : { branchId, companyId };
+        const whereClause = {};
+        if (role !== 'SUPER_MASTER') {
+            if (companyId) whereClause.companyId = companyId;
+            if (filterBranchId) whereClause.branchId = filterBranchId;
+        } else {
+            if (filterBranchId) whereClause.branchId = filterBranchId;
+        }
 
         if (entityType) whereClause.entityType = entityType;
         if (isActive !== undefined) whereClause.isActive = isActive === 'true';
