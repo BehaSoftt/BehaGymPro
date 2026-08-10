@@ -7,14 +7,16 @@ class UserService {
     /**
      * Tüm kullanıcıları filtreleyerek getirir
      */
-    static async getAllUsers(filters, currentUser) {
-        const { branchId: userBranchId, role: userRole } = currentUser;
-        const { branchId, companyId, page = 1, limit = 50 } = filters;
+    static async getAllUsers(filters = {}, currentUser = {}) {
+        const { branchId: userBranchId, role: userRole, username } = currentUser || {};
+        const { branchId, companyId, page = 1, limit = 50 } = filters || {};
         const offset = (page - 1) * limit;
 
+        const isSuperMaster = (userRole || '').toUpperCase() === 'SUPER_MASTER' || username === 'super_master';
+
         const where = {};
-        if (userRole !== 'SUPER_MASTER') {
-            where.branchId = userBranchId;
+        if (!isSuperMaster) {
+            if (userBranchId) where.branchId = userBranchId;
             where.role = { [Op.ne]: 'SUPER_MASTER' };
         } else {
             if (branchId) where.branchId = branchId;
