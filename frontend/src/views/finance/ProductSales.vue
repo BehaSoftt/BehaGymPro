@@ -566,7 +566,11 @@ const addToCart = (product) => {
   const success = salesStore.addToCart(product);
   if (!success && salesStore.error) {
     toast(salesStore.error, 'error');
-    salesStore.resetError();
+    if (typeof salesStore.resetError === 'function') {
+      salesStore.resetError();
+    } else {
+      salesStore.error = null;
+    }
   } else {
     selectedCartItem.value = cart.value.find(i => i.productId === product.id) || null;
   }

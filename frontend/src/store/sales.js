@@ -256,6 +256,10 @@ export const useSalesStore = defineStore('sales', {
         this.error = err.response?.data?.message || 'Satış detayı yüklenemedi'
         return null
       }
+    },
+
+    resetError() {
+      this.error = null
     }
   }
 })

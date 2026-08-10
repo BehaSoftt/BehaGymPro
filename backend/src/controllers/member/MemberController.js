@@ -66,15 +66,22 @@ class MemberController {
      * Tek bir üye detayını getir
      */
     static getById = catchAsync(async (req, res) => {
-        const member = await Member.findByPk(req.params.id, {
-            include: [
-                { model: User, as: 'user', attributes: ['email', 'username'] },
-                { model: MembershipPackage, as: 'package' },
-                { model: Branch, as: 'Branch' }
-            ]
-        });
-        if (!member) throw new AppError('Üye bulunamadı.', 404);
-        res.json(member);
+        try {
+            const member = await Member.findByPk(req.params.id, {
+                include: [
+                    { model: User, as: 'user', attributes: ['email', 'username'], required: false },
+                    { model: MembershipPackage, as: 'package', required: false },
+                    { model: Branch, as: 'Branch', required: false }
+                ]
+            });
+            if (!member) throw new AppError('Üye bulunamadı.', 404);
+            return res.json(member);
+        } catch (err) {
+            console.error('❌ [MEMBER_GET_BY_ID_ERROR]:', err.message);
+            const memberFallback = await Member.findByPk(req.params.id);
+            if (!memberFallback) throw new AppError('Üye bulunamadı.', 404);
+            return res.json(memberFallback);
+        }
     });
 
     /**

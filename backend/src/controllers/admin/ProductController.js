@@ -92,7 +92,10 @@ class ProductController {
      * Toplu stok güncelleme
      */
     static bulkUpdateStock = catchAsync(async (req, res) => {
-        const { updates } = req.body;
+        const updates = req.body.updates || req.body.stockUpdates || (Array.isArray(req.body) ? req.body : []);
+        if (!updates || !updates.length) {
+            throw new AppError('Güncellenecek stok bilgisi verilmeli.', 400);
+        }
         const results = await ProductService.bulkUpdateStock(updates);
         res.json({ message: 'Stoklar başarıyla güncellendi.', results });
     });
