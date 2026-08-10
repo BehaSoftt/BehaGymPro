@@ -277,10 +277,14 @@ const fetchPlanDetails = async (plan) => {
 
 const fetchWeekLogs = async (planId, week) => {
   try {
-    const logs = await trainingService.getWeekLogs(planId, week)
+    const logsRes = await trainingService.getWeekLogs(planId, week)
+    const logs = Array.isArray(logsRes) ? logsRes : (logsRes?.logs || [])
     completedDays.value = logs.map(log => `${planId}-${week}-${log.dayOfWeek}`)
     tempCompletedDays.value = [...completedDays.value]
-  } catch (err) { console.error(err) }
+  } catch (err) { 
+    completedDays.value = []
+    tempCompletedDays.value = []
+  }
 }
 
 const viewPlan = async (plan) => {

@@ -64,7 +64,7 @@ export const trainingService = {
         const response = await apiClient.get('/training-plans/logs/all', {
             params: { planId, weekNumber, memberId }
         });
-        return response.data;
+        return Array.isArray(response.data) ? response.data : (response.data?.logs || []);
     },
 
     async logBatchActivity(data) {
