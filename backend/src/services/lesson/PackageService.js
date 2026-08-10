@@ -23,16 +23,21 @@ class PackageService {
 
             let where = {};
             if (!isSuperMaster) {
-                // Şubeye özel veya genel paketleri getir (Eğer branchId/companyId varsa)
-                if (branchId && companyId) {
+                if (companyId) {
                     where = {
                         [Op.or]: [
-                            { branchId, companyId },
-                            { branchId: null, companyId: null }
+                            { companyId },
+                            { companyId: null, branchId: null }
+                        ]
+                    };
+                } else if (branchId) {
+                    where = {
+                        [Op.or]: [
+                            { branchId },
+                            { companyId: null, branchId: null }
                         ]
                     };
                 } else {
-                    // Veri yoksa sadece genel paketleri getir
                     where = { branchId: null, companyId: null };
                 }
             }
