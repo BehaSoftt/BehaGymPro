@@ -688,7 +688,9 @@ const saveUserSettingsLocal = async () => {
       }
       if (newPassword.value) selectedUser.value.password = newPassword.value;
       
+      console.log('🚀 [KULLANICI EKLE] Gönderilen veri:', JSON.parse(JSON.stringify(selectedUser.value)));
       const res = await userService.create(selectedUser.value)
+      console.log('✅ [KULLANICI EKLE] Başarıyla oluşturuldu:', res);
       
       if (selectedUser.value.role === 'TERMINAL' && selectedUser.value.kioskConfig) {
          await userService.saveKioskConfig({
@@ -701,7 +703,9 @@ const saveUserSettingsLocal = async () => {
       const updatePayload = { ...selectedUser.value }
       if (newPassword.value) updatePayload.password = newPassword.value
       
+      console.log('🔄 [KULLANICI GÜNCELLE] Gönderilen veri:', JSON.parse(JSON.stringify(updatePayload)));
       await userService.updateSettings(selectedUser.value.id, updatePayload)
+      console.log('✅ [KULLANICI GÜNCELLE] Başarıyla güncellendi:', selectedUser.value.id);
 
       if (selectedUser.value.role === 'TERMINAL' && selectedUser.value.kioskConfig) {
          await userService.saveKioskConfig({
@@ -716,6 +720,7 @@ const saveUserSettingsLocal = async () => {
     newPassword.value = ''
   } catch (err) {
     const errorMsg = err.response?.data?.message || 'Hata oluştu.'
+    console.error('❌ [KULLANICI HATASI]:', err);
     showAlertError('HATA', errorMsg)
   } finally {
     loading.value = false
