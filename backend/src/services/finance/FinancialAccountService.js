@@ -52,7 +52,11 @@ class FinancialAccountService {
     }
 
     static async createMemberAccount(member, transaction = null) {
-        return this.createFinancialAccount('MEMBER', member.id, member.fullName, member.branchId, member.companyId, null, false, transaction);
+        let entityType = 'MEMBER';
+        if (member.profileType === 'INSTRUCTOR') entityType = 'INSTRUCTOR';
+        else if (member.profileType === 'PERSONNEL' || member.profileType === 'STAFF' || member.profileType === 'USER') entityType = 'USER';
+        
+        return this.createFinancialAccount(entityType, member.id, member.fullName, member.branchId, member.companyId, null, false, transaction);
     }
 
     static async createUserAccount(user, branchId, companyId, transaction = null) {
@@ -60,7 +64,6 @@ class FinancialAccountService {
     }
 
     static async createInstructorAccount(member, transaction = null) {
-        // Redirrect to Member account since they are now the same model
         return this.createMemberAccount(member, transaction);
     }
 
