@@ -87,7 +87,7 @@ class UserService {
     /**
      * Kullanıcı ayarlarını günceler
      */
-    static async updateSettings(id, updateData) {
+    static async updateSettings(id, updateData, currentUser = {}) {
         const user = await User.findByPk(id);
         if (!user) throw new Error('Kullanıcı bulunamadı.');
 
@@ -95,7 +95,7 @@ class UserService {
         const allowedUpdates = { ...updateData };
         
         // Eğer güncellemeyi yapan kişi SUPER_MASTER değilse, kritik alanları koru
-        if (currentUser.role !== 'SUPER_MASTER') {
+        if ((currentUser?.role || '').toUpperCase() !== 'SUPER_MASTER') {
             delete allowedUpdates.role;
             delete allowedUpdates.roleId;
             delete allowedUpdates.companyId;

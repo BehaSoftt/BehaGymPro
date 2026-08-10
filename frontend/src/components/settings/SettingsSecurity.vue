@@ -640,7 +640,7 @@ const selectUser = (user) => {
 
 const openUserForm = () => {
   newPassword.value = ''
-  const role = securitySubTab.value === 'instructors' ? 'EĞİTMEN' : 
+  const role = securitySubTab.value === 'instructors' ? 'INSTRUCTOR' : 
                securitySubTab.value === 'staff_sub' ? 'RECEPTIONIST' : 
                securitySubTab.value === 'users_sub' ? 'USER' : 
                securitySubTab.value === 'terminals_sub' ? 'TERMINAL' : 'MEMBER'
