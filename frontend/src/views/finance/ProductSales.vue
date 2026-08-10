@@ -450,6 +450,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick, inject, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { 
   Plus, Minus, Trash2, Search, X, Package, ShoppingBag, Loader2, Check, Printer, ChevronRight, ChevronLeft, CreditCard, ArrowLeft
 } from 'lucide-vue-next';
@@ -458,6 +459,7 @@ import { useAuthStore } from '../../store/auth';
 import { useAlerts } from '../../utils/alerts';
 import BaseMemberAvatar from '../../components/base/BaseMemberAvatar.vue';
 
+const router = useRouter();
 const salesStore = useSalesStore();
 const auth = useAuthStore();
 const { toast, confirm, error: showAlertError } = useAlerts();

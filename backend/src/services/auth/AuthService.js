@@ -39,8 +39,12 @@ class AuthService {
             const hashedCode = SecurityVault.hash(code);
             await user.update({ twoFactorCode: hashedCode, twoFactorExpiry: expiry });
 
+            console.log(`[2FA] Kod gönderiliyor: ${user.email}`);
             Mailer.sendMail(user.email, 'BehaGym Pro Giriş Onay Kodu', `Giriş kodunuz: ${code}`)
-                .catch(e => console.error('Mailer Error:', e.message));
+                .then(() => console.log('[2FA] E-posta başarıyla gönderildi!'))
+                .catch(e => console.error('[2FA] Mailer Error:', e.message));
+
+
 
             return { status: 'REQUIRE_2FA', userId: user.id };
         }

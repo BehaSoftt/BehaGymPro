@@ -40,12 +40,22 @@ class WhatsAppService {
             ? path.join(path.dirname(process.execPath), 'sessions')
             : './sessions';
 
+        // Chrome lock dosyalarını temizle (nodemon restart sonrası oluşan stale lock'ları önler)
+        const fs = require('fs');
+        const lockFiles = [
+            path.join(sessionsPath, 'session', 'SingletonLock'),
+            path.join(sessionsPath, 'session', 'SingletonCookie'),
+            path.join(sessionsPath, 'session', 'SingletonSocket'),
+        ];
+        lockFiles.forEach(f => { try { if (fs.existsSync(f)) { fs.unlinkSync(f); console.log('[WhatsApp] Lock temizlendi:', path.basename(f)); } } catch (_) {} });
+
         this.client = new Client({
             authStrategy: new LocalAuth({
                 dataPath: sessionsPath // Oturumu bilgisayarda saklar
             }),
             puppeteer: {
                 headless: true,
+                executablePath: process.env.CHROME_PATH || '/home/behasoft/.cache/puppeteer/chrome/linux-149.0.7827.22/chrome-linux64/chrome',
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             }
         });
