@@ -332,16 +332,19 @@ class FinancialAccountService {
 
             // 2. Bakiye Güncelle
             if (transactionType === 'CREDIT') {
-                await account.update({
-                    balance: sequelize.literal(`"balance" + ${cleanAmount}`),
-                    totalCredit: sequelize.literal(`"totalCredit" + ${cleanAmount}`),
-                    cashBalance: paymentMethod === 'CASH' ? sequelize.literal(`"cashBalance" + ${cleanAmount}`) : undefined
-                }, { transaction: t });
-            } else {
+                // Tahsilat: Üyenin borç bakiyesi düşer (balance - amount), Alacak toplamı ve Kasa/POS/Banka tutarı artar
                 await account.update({
                     balance: sequelize.literal(`"balance" - ${cleanAmount}`),
-                    totalDebit: sequelize.literal(`"totalDebit" + ${cleanAmount}`),
-                    cashBalance: paymentMethod === 'CASH' ? sequelize.literal(`"cashBalance" - ${cleanAmount}`) : undefined
+                    totalCredit: sequelize.literal(`"totalCredit" + ${cleanAmount}`),
+                    cashBalance: paymentMethod === 'CASH' ? sequelize.literal(`"cashBalance" + ${cleanAmount}`) : undefined,
+                    posBalance: paymentMethod === 'CREDIT_CARD' ? sequelize.literal(`"posBalance" + ${cleanAmount}`) : undefined,
+                    bankBalance: paymentMethod === 'BANK_TRANSFER' ? sequelize.literal(`"bankBalance" + ${cleanAmount}`) : undefined
+                }, { transaction: t });
+            } else {
+                // Borçlandırma / Satış: Üyenin borç bakiyesi ve Borç toplamı artar
+                await account.update({
+                    balance: sequelize.literal(`"balance" + ${cleanAmount}`),
+                    totalDebit: sequelize.literal(`"totalDebit" + ${cleanAmount}`)
                 }, { transaction: t });
             }
 
