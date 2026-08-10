@@ -100,7 +100,7 @@ const props = defineProps({
   type: { type: String, default: 'text' },
   placeholder: String,
   required: Boolean,
-  disabled: Boolean,
+  disabled: [Boolean, Object, String],
   error: String,
   suffix: String,
   rows: { type: Number, default: 3 },
