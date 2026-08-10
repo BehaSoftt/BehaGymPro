@@ -161,24 +161,17 @@ class SalesService {
                 ]
             };
 
-            // Apply filters based on role
-            if (role === 'SUPER_MASTER') {
-                where.companyId = companyId;
-            } else {
-                if (branchId) where.branchId = branchId;
-                where.companyId = companyId;
-            }
+            // Apply company-wide filtering so members across all branches are searchable for sales
+            if (companyId) where.companyId = companyId;
 
             console.log('🔍 [Sales Search] Query:', searchQuery, 'Role:', role, 'Company:', companyId, 'Branch:', branchId);
-            console.log('🔍 [Sales Search] Where clause:', JSON.stringify(where));
 
-            // Search members ONLY (for product sales)
+            // Search members & personnel (for product sales & cari accounts)
             const members = await Member.findAll({
                 where,
                 include: [{
                     model: FinancialAccount,
                     as: 'financialAccount',
-                    where: { entityType: 'MEMBER' },
                     required: false
                 }],
                 order: [['fullName', 'ASC']],
