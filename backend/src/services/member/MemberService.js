@@ -340,6 +340,15 @@ class MemberService {
                 }, { transaction: t });
                 console.log('[DEBUG] Member created:', member.id);
 
+                // AUTOMATIC CARI KART (FINANCIAL ACCOUNT) CREATION
+                try {
+                    const FinancialAccountService = require('../finance/FinancialAccountService');
+                    await FinancialAccountService.createMemberAccount(member, t);
+                    console.log('[DEBUG] Cari Kart automatically created for member:', member.fullName);
+                } catch (cariErr) {
+                    console.error('[CARİ KART ERROR]:', cariErr.message);
+                }
+
                 // SPORT GROUP SYNC: If sportGroupId is provided, create junction entry
                 if (member.sportGroupId) {
                     await SportGroupMember.create({
