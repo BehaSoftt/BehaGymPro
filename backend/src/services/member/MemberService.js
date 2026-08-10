@@ -194,7 +194,7 @@ class MemberService {
                     'instructorCode', 'personnelCode', 'branchId', 'companyId', 
                     'activityLevel', 'fitnessGoals', 'membershipType', 'createdAt',
                     'currentBelt', 'beltBranchId', 'lastBeltDate', 'sportGroupId',
-                    'fitnessNotes', 'healthNotes'
+                    'fitnessNotes', 'healthNotes', 'city', 'district', 'address', 'packageId'
                 ],
                 include: [
                     { model: User, as: 'user', attributes: ['email', 'username'] },
@@ -344,6 +344,37 @@ class MemberService {
                         isActive: true
                     }, { transaction: t });
                     console.log('[DEBUG] SportGroupMember junction entry created for group:', member.sportGroupId);
+                }
+
+                // MEMBERSHIP PACKAGE ASSIGNMENT: If packageId is provided, create active MemberPackage
+                if (member.packageId) {
+                    const pkg = await MembershipPackage.findByPk(member.packageId, { transaction: t });
+                    if (pkg) {
+                        const startDate = member.registrationDate || new Date().toISOString().split('T')[0];
+                        let expDate = member.expiryDate;
+                        if (!expDate && pkg.durationMonths) {
+                            const d = new Date(startDate);
+                            d.setMonth(d.getMonth() + pkg.durationMonths);
+                            expDate = d.toISOString().split('T')[0];
+                        }
+                        await MemberPackage.create({
+                            memberId: member.id,
+                            packageId: pkg.id,
+                            startDate,
+                            expiryDate: expDate,
+                            status: 'ACTIVE',
+                            paymentStatus: 'PAID',
+                            remainingSessions: pkg.sessionCount || 0,
+                            companyId: finalCompanyId,
+                            branchId: finalBranchId,
+                            createdBy: currentUser?.id || user.id
+                        }, { transaction: t });
+
+                        if (expDate) {
+                            await member.update({ expiryDate: expDate }, { transaction: t });
+                        }
+                        console.log('[DEBUG] Active MemberPackage created for package:', pkg.name);
+                    }
                 }
 
                 return member;

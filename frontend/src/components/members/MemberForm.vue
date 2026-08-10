@@ -435,6 +435,28 @@
             <span class="text-[0.85rem] font-medium text-slate-200 tracking-widest">Ders & Tesis Erişimi</span>
           </div>
 
+          <!-- Üyelik Paketi & Bitiş Tarihi -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-900/40 border border-emerald-500/30 shadow-xl">
+             <BaseInput 
+               :modelValue="localMember.packageId"
+               @update:modelValue="handlePackageChange"
+               type="select"
+               label="ÜYELİK PAKETİ SEÇİMİ"
+             >
+               <template #icon><CreditCard class="w-4 h-4 text-emerald-400" /></template>
+               <option value="">PAKET SEÇİLMEDİ (STANDART)</option>
+               <option v-for="pkg in availablePackages" :key="pkg.id" :value="pkg.id">
+                 {{ pkg.name }} — ₺{{ pkg.price }} {{ pkg.durationMonths ? `(${pkg.durationMonths} Ay)` : (pkg.sessionCount ? `(${pkg.sessionCount} Ders)` : '') }}
+               </option>
+             </BaseInput>
+
+             <BaseInput 
+               v-model="localMember.expiryDate"
+               type="date"
+               label="ÜYELİK BİTİŞ TARİHİ"
+             />
+          </div>
+
           <!-- Ders Erişimi Section -->
           <div class="space-y-4 p-4 bg-slate-900/40 border border-indigo-500/20">
             <label class="block text-[0.75rem] font-medium text-slate-400 uppercase tracking-widest mb-3">Ders Erişimi (Çoklu Seçim)</label>
@@ -608,7 +630,7 @@ import axios from 'axios'
 import { 
   Users, UserPlus, X, QrCode, UserCheck, GraduationCap, 
   Phone, History, Activity, LayoutGrid, Settings, Info,
-  Send, Save, Check, Trophy, ShieldCheck
+  Send, Save, Check, Trophy, ShieldCheck, CreditCard
 } from 'lucide-vue-next'
 
 // Base Components
@@ -629,10 +651,11 @@ const props = defineProps({
   editingId: { type: [String, Number], default: null },
   loading: { type: Boolean, default: false },
   branches: { type: Array, default: () => [] },
-  specialties: { type: Array, default: () => [] }
+  specialties: { type: Array, default: () => [] },
+  packages: { type: Array, default: () => [] }
 })
 
-const { modelValue, editingId, loading, branches, specialties } = toRefs(props)
+const { modelValue, editingId, loading, branches, specialties, packages } = toRefs(props)
 
 const emit = defineEmits(['update:modelValue', 'save', 'cancel', 'photoUpload', 'sendWhatsApp'])
 
@@ -655,6 +678,36 @@ const groupedSpecialties = computed(() => {
 
 const beltSpecialties = computed(() => specialties.value.filter(s => s.hasBelts))
 const generalSpecialties = computed(() => specialties.value.filter(s => !s.hasBelts))
+
+const availablePackages = computed(() => {
+  if (!packages.value || !Array.isArray(packages.value)) return []
+  if (!localMember.value.branchId) return packages.value
+  return packages.value.filter(p => !p.branchId || p.branchId === localMember.value.branchId)
+})
+
+const handlePackageChange = (pkgId) => {
+  const pkg = packages.value?.find(p => p.id === pkgId)
+  if (pkg) {
+    let expDate = localMember.value.expiryDate
+    if (pkg.durationMonths) {
+      const reg = localMember.value.registrationDate ? new Date(localMember.value.registrationDate) : new Date()
+      reg.setMonth(reg.getMonth() + parseInt(pkg.durationMonths))
+      expDate = reg.toISOString().split('T')[0]
+    }
+    localMember.value = {
+      ...localMember.value,
+      packageId: pkgId,
+      membershipType: pkg.name || 'STANDART',
+      specialtyId: pkg.specialtyId || localMember.value.specialtyId,
+      expiryDate: expDate
+    }
+  } else {
+    localMember.value = {
+      ...localMember.value,
+      packageId: ''
+    }
+  }
+}
 
 const calculatedAge = computed(() => {
   if (!localMember.value.birthDate) return null

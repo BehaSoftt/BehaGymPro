@@ -8,6 +8,7 @@
       :loading="loading"
       :branches="branches"
       :specialties="availableSpecialties"
+      :packages="packages"
       @save="saveMember"
       @cancel="closeForm"
       @photo-upload="handlePhotoUpload"
@@ -303,7 +304,7 @@ const TrainingPlanPanel = defineAsyncComponent(() => import('../../components/me
 const auth = useAuthStore()
 const router = useRouter()
 const dataStore = useDataStore()
-const { branches, specialties: availableSpecialties } = storeToRefs(dataStore)
+const { branches, specialties: availableSpecialties, packages } = storeToRefs(dataStore)
 const { toast, error: showAlertError } = useAlerts()
 
 const {
@@ -411,7 +412,10 @@ const newMember = ref({
   specialties: []
 })
 
-onMounted(() => fetchMembers())
+onMounted(() => {
+  fetchMembers()
+  dataStore.fetchPackages()
+})
 
 watch(showForm, (val) => {
   pageSubtitle.value = val ? (editingId.value ? 'DÜZENLE' : 'YENİ KAYIT') : ''
@@ -433,9 +437,13 @@ const startEdit = (member) => {
   
   newMember.value = { 
     ...pureData,
-    branchId: pureData.branchId || Branch?.id || '',
+    branchId: pureData.branchId || Branch?.id || auth.user?.branchId || branches.value?.[0]?.id || '',
     specialtyId: pureData.specialtyId || pureData.specialty?.id || specialty?.id || '',
     beltBranchId: pureData.beltBranchId || beltBranch?.id || '',
+    city: pureData.city || '',
+    district: pureData.district || '',
+    address: pureData.address || '',
+    packageId: pureData.packageId || pureData.package?.id || activePackages?.[0]?.packageId || '',
     lessonTypes: pureData.lessonTypes || [],
     specialties: pureData.specialties || []
   }
