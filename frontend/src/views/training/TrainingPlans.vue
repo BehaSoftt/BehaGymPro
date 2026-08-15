@@ -484,20 +484,21 @@ const initSevenDays = (existingDays = [], items = []) => {
   for (let idx = 0; idx < 7; idx++) {
     const found = (existingDays || []).find(d => Number(d.dayOfWeek) === idx)
     const hasItems = (items || []).some(i => Number(i.dayOfWeek) === idx)
+    const isRest = hasItems ? false : (found && found.isRestDay !== undefined ? (found.isRestDay === true || found.isRestDay === 'true') : true)
     if (found) {
       result.push({
         ...found,
         dayOfWeek: idx,
         startTime: found.startTime || '09:00',
         endTime: found.endTime || '10:30',
-        isRestDay: found.isRestDay !== undefined ? (found.isRestDay === true || found.isRestDay === 'true') : !hasItems
+        isRestDay: isRest
       })
     } else {
       result.push({
         dayOfWeek: idx,
         startTime: '09:00',
         endTime: '10:30',
-        isRestDay: !hasItems
+        isRestDay: isRest
       })
     }
   }
@@ -598,6 +599,7 @@ const getItemsForDay = (dayIdx) => (newPlan.value.items || []).filter(i => i.day
 const addItemToDay = (dayIdx) => { 
   if (!newPlan.value.items) newPlan.value.items = []
   newPlan.value.items.push({ exerciseId: '', dayOfWeek: dayIdx, durationMinutes: 10, sets: 3, reps: 12, weight: 0, rounds: 1, notes: '' }) 
+  getDayData(dayIdx).isRestDay = false
 }
 const removeItem = (item) => { 
   const idx = newPlan.value.items.indexOf(item)

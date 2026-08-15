@@ -73,6 +73,7 @@ class TrainingService {
         for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
             const existing = days.find(d => Number(d.dayOfWeek) === dayIdx);
             const hasItems = items.some(i => Number(i.dayOfWeek) === dayIdx);
+            const isRest = hasItems ? false : (existing && existing.isRestDay !== undefined ? (existing.isRestDay === true || existing.isRestDay === 'true') : true);
 
             if (existing) {
                 result.push({
@@ -80,16 +81,14 @@ class TrainingService {
                     dayOfWeek: dayIdx,
                     startTime: existing.startTime || '09:00',
                     endTime: existing.endTime || '10:30',
-                    isRestDay: existing.isRestDay !== undefined
-                        ? (existing.isRestDay === true || existing.isRestDay === 'true')
-                        : !hasItems
+                    isRestDay: isRest
                 });
             } else {
                 result.push({
                     dayOfWeek: dayIdx,
                     startTime: '09:00',
                     endTime: '10:30',
-                    isRestDay: !hasItems
+                    isRestDay: isRest
                 });
             }
         }
