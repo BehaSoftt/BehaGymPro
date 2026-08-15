@@ -34,19 +34,23 @@ fi
 
 echo ""
 echo "🔄 [3/3] Arka yüz servisi ve Veritabanı güncelleniyor..."
-if command -v pm2 &> /dev/null && pm2 list | grep -q "behagym"; then
+
+# Çalışan eski süreçleri temizle
+pkill -f backend-server-linux || true
+pkill -f "node src/app.js" || true
+sleep 1
+
+# Eğer kaynak kod klasörü (backend/src/app.js) ve node varsa öncelikli olarak kaynak koddan başlat
+if [ -f "backend/src/app.js" ] && command -v node &> /dev/null; then
+  echo "🚀 Canlı kaynak kod üzerinden başlatılıyor..."
+  cd backend && nohup npm start > ../server-log.txt 2>&1 & cd ..
+elif command -v pm2 &> /dev/null && pm2 list | grep -q "behagym"; then
   pm2 restart behagym
 elif systemctl is-active --quiet behagym; then
   sudo systemctl restart behagym
-else
-  pkill -f backend-server-linux || pkill -f "node src/app.js" || true
-  sleep 1
-  if [ -f "backend/backend-server-linux" ]; then
-    chmod +x backend/backend-server-linux
-    nohup ./backend/backend-server-linux > server-log.txt 2>&1 &
-  else
-    cd backend && nohup npm start > ../server-log.txt 2>&1 & cd ..
-  fi
+elif [ -f "backend/backend-server-linux" ]; then
+  chmod +x backend/backend-server-linux
+  nohup ./backend/backend-server-linux > server-log.txt 2>&1 &
 fi
 
 echo ""
