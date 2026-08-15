@@ -48,13 +48,13 @@ try {
   // -t (target): node18-win-x64 ve node18-linux-x64
   // --out-path: Çıktı klasörü
   console.log('🖥️  Windows sürümü oluşturuluyor...');
-  execSync(`${npxCmd} pkg backend/src/app.js --targets node18-win-x64 --output ` + path.join(backendDest, 'backend-server.exe'), {
+  execSync(`${npxCmd} pkg backend/src/app.js --targets node18-win-x64 --output "` + path.join(backendDest, 'backend-server.exe') + `"`, {
     stdio: 'inherit',
     shell: true
   });
 
   console.log('🐧 Linux sürümü oluşturuluyor...');
-  execSync(`${npxCmd} pkg backend/src/app.js --targets node18-linux-x64 --output ` + path.join(backendDest, 'backend-server-linux'), {
+  execSync(`${npxCmd} pkg backend/src/app.js --targets node18-linux-x64 --output "` + path.join(backendDest, 'backend-server-linux') + `"`, {
     stdio: 'inherit',
     shell: true
   });
@@ -223,7 +223,7 @@ exit
 
 fs.writeFileSync(path.join(publishDir, 'start-silent.bat'), startSilentScriptImproved);
 
-// Linux için Start Scripti
+// Linux için Start Scripti (Konsol)
 const startLinuxScript = `#!/bin/bash
 DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR"
@@ -235,7 +235,25 @@ chmod +x backend/backend-server-linux
 `;
 
 fs.writeFileSync(path.join(publishDir, 'start.sh'), startLinuxScript);
-execSync(`chmod +x ` + path.join(publishDir, 'start.sh'), { stdio: 'ignore' });
+execSync(`chmod +x "` + path.join(publishDir, 'start.sh') + `"`, { stdio: 'ignore' });
+
+// Linux için Arka Plan Start Scripti (Daemon / Background)
+const startBgLinuxScript = `#!/bin/bash
+DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd "$DIR"
+echo "========================================"
+echo "BehaGym Pro - Linux Arka Plan Başlatıcı"
+echo "========================================"
+chmod +x backend/backend-server-linux
+nohup ./backend/backend-server-linux > server-log.txt 2>&1 &
+echo "[BAŞARILI] BehaGym Pro arka planda başlatıldı."
+echo "Erişim Adresi: http://localhost:5000"
+echo "Log takibi: tail -f server-log.txt"
+echo "Durdurmak için: ./stop.sh"
+`;
+
+fs.writeFileSync(path.join(publishDir, 'start-bg.sh'), startBgLinuxScript);
+execSync(`chmod +x "` + path.join(publishDir, 'start-bg.sh') + `"`, { stdio: 'ignore' });
 
 // Linux için Stop Scripti
 const stopLinuxScript = `#!/bin/bash
@@ -247,7 +265,44 @@ echo "[BAŞARILI] Tüm BehaGym servisleri kapatıldı."
 `;
 
 fs.writeFileSync(path.join(publishDir, 'stop.sh'), stopLinuxScript);
-execSync(`chmod +x ` + path.join(publishDir, 'stop.sh'), { stdio: 'ignore' });
+execSync(`chmod +x "` + path.join(publishDir, 'stop.sh') + `"`, { stdio: 'ignore' });
+
+// Linux için Tek Tık Güncelleme Scripti (Target makinadaki .env ve uploads'ı korur)
+const updateLinuxScript = `#!/bin/bash
+DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd "$DIR"
+
+echo "========================================"
+echo "BehaGym Pro - Linux Akıllı Güncelleyici"
+echo "========================================"
+
+TARGET_DIR="\${1:-\$PWD}"
+
+echo "[1/4] Çalışan backend servisleri durduruluyor..."
+pkill -f backend-server-linux >/dev/null 2>&1 || true
+sleep 1
+
+echo "[2/4] İzinler ayarlanıyor..."
+chmod +x backend/backend-server-linux start.sh start-bg.sh stop.sh 2>/dev/null || true
+
+echo "[3/4] Konfigürasyon kontrolü..."
+if [ ! -f "backend/.env" ] && [ -f "backend/.env.example" ]; then
+    cp backend/.env.example backend/.env
+    echo "[BİLGİ] Yeni .env dosyası .env.example'dan oluşturuldu."
+fi
+
+echo "[4/4] Sistem başlatılıyor..."
+nohup ./backend/backend-server-linux > server-log.txt 2>&1 &
+
+echo "========================================"
+echo "[BAŞARILI] Güncelleme uygulandı ve sistem başlatıldı!"
+echo "Erişim: http://localhost:5000"
+echo "Log takibi: tail -f server-log.txt"
+echo "========================================"
+`;
+
+fs.writeFileSync(path.join(publishDir, 'update-linux.sh'), updateLinuxScript);
+execSync(`chmod +x "` + path.join(publishDir, 'update-linux.sh') + `"`, { stdio: 'ignore' });
 
 // Linux Masaüstü Kısayolu (.desktop)
 const desktopContent = `[Desktop Entry]
@@ -255,7 +310,7 @@ Type=Application
 Terminal=true
 Name=BehaGym Pro
 Icon=utilities-terminal
-Exec=${path.join(publishDir, 'start.sh')}
+Exec="${path.join(publishDir, 'start.sh')}"
 Categories=Development;
 `;
 

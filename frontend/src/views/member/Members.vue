@@ -101,10 +101,16 @@
             </template>
 
             <template #cell-specialty="{ item }">
-              <div class="flex items-center justify-center">
-                <span v-if="item.specialty" class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest bg-slate-900 px-2 py-1 border border-slate-800">
-                  {{ item.specialty.name }}
-                </span>
+              <div class="flex flex-wrap items-center justify-center gap-1">
+                <template v-if="getMemberSpecialtyNames(item).length > 0">
+                  <span 
+                    v-for="(name, idx) in getMemberSpecialtyNames(item)" 
+                    :key="idx"
+                    class="text-[0.6rem] font-black text-slate-300 uppercase tracking-widest bg-slate-900 px-2 py-0.5 border border-slate-800"
+                  >
+                    {{ name }}
+                  </span>
+                </template>
                 <span v-else class="text-[0.5rem] text-slate-600 font-bold uppercase tracking-widest">GENEL</span>
               </div>
             </template>
@@ -413,9 +419,43 @@ const newMember = ref({
   specialties: []
 })
 
+const getMemberSpecialtyNames = (item) => {
+  const names = []
+
+  if (item.specialties && Array.isArray(item.specialties) && item.specialties.length > 0) {
+    item.specialties.forEach(id => {
+      const s = availableSpecialties.value?.find(x => String(x.id) === String(id))
+      if (s?.name && !names.includes(s.name)) {
+        names.push(s.name)
+      }
+    })
+  }
+
+  if (item.specialty?.name && !names.includes(item.specialty.name)) {
+    names.push(item.specialty.name)
+  } else if (item.specialtyId) {
+    const s = availableSpecialties.value?.find(x => String(x.id) === String(item.specialtyId))
+    if (s?.name && !names.includes(s.name)) {
+      names.push(s.name)
+    }
+  }
+
+  if (item.lessonSpecialty?.name && !names.includes(item.lessonSpecialty.name)) {
+    names.push(item.lessonSpecialty.name)
+  } else if (item.privateLessonSpecialtyId) {
+    const s = availableSpecialties.value?.find(x => String(x.id) === String(item.privateLessonSpecialtyId))
+    if (s?.name && !names.includes(s.name)) {
+      names.push(s.name)
+    }
+  }
+
+  return names
+}
+
 onMounted(() => {
   fetchMembers()
   dataStore.fetchPackages()
+  dataStore.fetchSpecialties()
 })
 
 watch(showForm, (val) => {

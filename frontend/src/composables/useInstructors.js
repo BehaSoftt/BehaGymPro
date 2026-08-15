@@ -22,6 +22,7 @@ export function useInstructors() {
   const fetchInstructors = async () => {
     loading.value = true
     try {
+      await dataStore.fetchSpecialties()
       const data = await instructorService.getAll()
       instructors.value = data
       return data

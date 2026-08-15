@@ -134,9 +134,17 @@
             <template #cell-goals="{ item }">
               <BaseScroll accent="rose" :maskSize="15">
                 <div class="flex gap-1 justify-center py-1">
-                   <BaseBadge v-for="goal in item.fitnessGoals" :key="goal" :type="goal === 'Zayıflamak' ? 'rose' : 'emerald'" class="whitespace-nowrap text-[0.5rem]">
-                     {{ goal === 'Zayıflamak' ? 'ZAYIFLA' : 'KİLO AL' }}
+                   <BaseBadge 
+                     v-for="goal in item.fitnessGoals" 
+                     :key="goal" 
+                     :type="getGoalBadgeType(goal)" 
+                     class="whitespace-nowrap text-[0.5rem] font-black uppercase"
+                   >
+                     {{ formatGoalName(goal) }}
                    </BaseBadge>
+                   <span v-if="!item.fitnessGoals || item.fitnessGoals.length === 0" class="text-[0.5rem] text-slate-600 font-bold uppercase">
+                     BELİRTİLMEDİ
+                   </span>
                 </div>
               </BaseScroll>
             </template>
@@ -637,6 +645,27 @@ const getBMIStatus = (bmi) => {
   if (bmi < 25) return { label: 'NORMAL', color: 'text-emerald-400' }
   if (bmi < 30) return { label: 'KİLOLU', color: 'text-amber-400' }
   return { label: 'OBEZ', color: 'text-rose-500' }
+}
+
+const getGoalBadgeType = (goal) => {
+  switch (goal) {
+    case 'Zayıflamak': return 'rose'
+    case 'Kilo Almak': return 'emerald'
+    case 'Kas Yapmak': return 'amber'
+    case 'Kondisyon': return 'sky'
+    case 'Esneklik': return 'purple'
+    case 'Disiplin': return 'indigo'
+    case 'Savunma': return 'danger'
+    case 'Müsabaka': return 'warning'
+    default: return 'secondary'
+  }
+}
+
+const formatGoalName = (goal) => {
+  if (!goal) return ''
+  if (goal === 'Zayıflamak') return 'ZAYIFLA'
+  if (goal === 'Kilo Almak') return 'KİLO AL'
+  return String(goal).toUpperCase()
 }
 
 const loading = ref(true)

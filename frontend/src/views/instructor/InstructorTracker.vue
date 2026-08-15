@@ -795,7 +795,10 @@ const daysOfWeek = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cu
 // Filter by selected instructor (admin only)
 const filteredPlans = computed(() => {
   if (!selectedInstructorFilter.value) return plans.value
-  return plans.value.filter(p => p.instructorId === selectedInstructorFilter.value)
+  return plans.value.filter(p =>
+    p.instructorId === selectedInstructorFilter.value ||
+    p.member?.privateLessonInstructorId === selectedInstructorFilter.value
+  )
 })
 
 // Then filter by education mode and search term

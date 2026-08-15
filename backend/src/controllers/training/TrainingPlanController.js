@@ -76,12 +76,7 @@ class TrainingPlanController {
      * Plan güncelle
      */
     static update = catchAsync(async (req, res) => {
-        const plan = await TrainingPlan.findByPk(req.params.id);
-        if (!plan) throw new AppError('Plan bulunamadı.', 404);
-        
-        await plan.update(req.body);
-        if (plan.memberId) await TrainingService.syncSchedules(plan.id);
-        
+        const plan = await TrainingService.updatePlan(req.params.id, req.body, req.user);
         res.json({ message: 'Plan güncellendi.', plan });
     });
 
@@ -147,7 +142,10 @@ class TrainingPlanController {
             return res.json(logs);
         }
 
-        const instructor = await Member.findOne({ where: { userId, profileType: 'INSTRUCTOR' } });
+        let instructor = await Member.findOne({ where: { userId, profileType: 'INSTRUCTOR' } });
+        if (!instructor) {
+            instructor = await Member.findOne({ where: { userId } });
+        }
         if (!instructor) return res.json([]); // Return empty if no instructor profile found
 
         const logs = await TrainingService.getInstructorDashboardLogs(instructor.id, branchId);

@@ -479,13 +479,38 @@ const groupedExercises = computed(() => {
   return result
 })
 
-const newPlan = ref({ id: null, title: '', description: '', memberId: null, packageId: null, specialtyId: null, instructorId: null, branchId: '', startDate: '', endDate: '', days: [], items: [], level: 1, isActive: true })
+const initSevenDays = (existingDays = [], items = []) => {
+  const result = []
+  for (let idx = 0; idx < 7; idx++) {
+    const found = (existingDays || []).find(d => Number(d.dayOfWeek) === idx)
+    const hasItems = (items || []).some(i => Number(i.dayOfWeek) === idx)
+    if (found) {
+      result.push({
+        ...found,
+        dayOfWeek: idx,
+        startTime: found.startTime || '09:00',
+        endTime: found.endTime || '10:30',
+        isRestDay: found.isRestDay !== undefined ? (found.isRestDay === true || found.isRestDay === 'true') : !hasItems
+      })
+    } else {
+      result.push({
+        dayOfWeek: idx,
+        startTime: '09:00',
+        endTime: '10:30',
+        isRestDay: !hasItems
+      })
+    }
+  }
+  return result
+}
+
+const newPlan = ref({ id: null, title: '', description: '', memberId: null, packageId: null, specialtyId: null, instructorId: null, branchId: '', startDate: '', endDate: '', days: initSevenDays([], []), items: [], level: 1, isActive: true })
 const timelineMonths = ref([])
 
 const getDayData = (dayIndex) => {
    let day = newPlan.value.days.find(d => d.dayOfWeek === dayIndex)
    if (!day) { 
-     day = { dayOfWeek: dayIndex, startTime: '09:00', endTime: '10:30', isRestDay: false }
+     day = { dayOfWeek: dayIndex, startTime: '09:00', endTime: '10:30', isRestDay: true }
      newPlan.value.days.push(day) 
    }
    return day
@@ -515,8 +540,13 @@ const getExistingPlanForMonth = (month) => {
 
 const selectMonth = (month) => {
    const existingPlan = getExistingPlanForMonth(month)
-   if (existingPlan) newPlan.value = { ...existingPlan, items: existingPlan.items.map(i => ({...i})) }
-   else { newPlan.value = { id: null, title: `${month.label} Programı`, description: '', memberId: newPlan.value.memberId, branchId: newPlan.value.branchId, packageId: newPlan.value.packageId, specialtyId: newPlan.value.specialtyId, startDate: month.startDate, endDate: month.endDate, items: [], days: [], level: 1, isActive: true } }
+   if (existingPlan) {
+     const pCopy = JSON.parse(JSON.stringify(existingPlan))
+     pCopy.days = initSevenDays(pCopy.days || [], pCopy.items || [])
+     newPlan.value = pCopy
+   } else {
+     newPlan.value = { id: null, title: `${month.label} Programı`, description: '', memberId: newPlan.value.memberId, branchId: newPlan.value.branchId, packageId: newPlan.value.packageId, specialtyId: newPlan.value.specialtyId, startDate: month.startDate, endDate: month.endDate, items: [], days: initSevenDays([], []), level: 1, isActive: true }
+   }
 }
 
 const toggleSelection = (id) => { selectedPlans.value = selectedPlans.value[0] === id ? [] : [id] }
@@ -584,7 +614,7 @@ const checkBulkAdd = (item, dayIdx) => {
 }
 
 const resetForm = () => {
-  newPlan.value = { id: null, title: '', description: '', memberId: null, packageId: null, specialtyId: null, instructorId: null, branchId: '', startDate: '', endDate: '', days: [], items: [], level: 1, isActive: true }
+  newPlan.value = { id: null, title: '', description: '', memberId: null, packageId: null, specialtyId: null, instructorId: null, branchId: '', startDate: '', endDate: '', days: initSevenDays([], []), items: [], level: 1, isActive: true }
   activeDayIndex.value = 0
   timelineMonths.value = []
 }
@@ -635,6 +665,8 @@ const savePlan = async () => {
      newPlan.value.endDate = endDate.toISOString().split('T')[0]
    }
    
+   newPlan.value.days = initSevenDays(newPlan.value.days, newPlan.value.items)
+
    loading.value = true
    try {
       if (newPlan.value.id) await trainingService.update(newPlan.value.id, newPlan.value)
@@ -669,15 +701,19 @@ const selectMember = (member) => {
 }
 
 const startEdit = (plan) => { 
-  newPlan.value = JSON.parse(JSON.stringify(plan))
+  const pCopy = JSON.parse(JSON.stringify(plan))
+  pCopy.days = initSevenDays(pCopy.days || [], pCopy.items || [])
+  newPlan.value = pCopy
   showAddModal.value = true
   if (plan.memberId) generateTimeline(plan.member) 
 }
 
 const duplicatePlan = (plan) => { 
-  newPlan.value = JSON.parse(JSON.stringify(plan))
-  newPlan.value.id = null
-  newPlan.value.title = `${plan.title} (KOPYA)`
+  const pCopy = JSON.parse(JSON.stringify(plan))
+  pCopy.id = null
+  pCopy.title = `${plan.title} (KOPYA)`
+  pCopy.days = initSevenDays(pCopy.days || [], pCopy.items || [])
+  newPlan.value = pCopy
   showAddModal.value = true
   if (plan.memberId) generateTimeline(plan.member || members.value.find(m => m.id === plan.memberId))
 }

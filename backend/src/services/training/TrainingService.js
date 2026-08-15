@@ -66,6 +66,37 @@ class TrainingService {
     }
 
     /**
+     * Haftanın 7 gününü eksiksiz hazırlar
+     */
+    static ensureAllSevenDays(days = [], items = []) {
+        const result = [];
+        for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+            const existing = days.find(d => Number(d.dayOfWeek) === dayIdx);
+            const hasItems = items.some(i => Number(i.dayOfWeek) === dayIdx);
+
+            if (existing) {
+                result.push({
+                    ...existing,
+                    dayOfWeek: dayIdx,
+                    startTime: existing.startTime || '09:00',
+                    endTime: existing.endTime || '10:30',
+                    isRestDay: existing.isRestDay !== undefined
+                        ? (existing.isRestDay === true || existing.isRestDay === 'true')
+                        : !hasItems
+                });
+            } else {
+                result.push({
+                    dayOfWeek: dayIdx,
+                    startTime: '09:00',
+                    endTime: '10:30',
+                    isRestDay: !hasItems
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
      * Yeni antrenman planı oluşturur
      */
     static async createPlan(planData, currentUser) {
@@ -73,6 +104,12 @@ class TrainingService {
         const { branchId, companyId } = currentUser;
 
         let finalInstructorId = instructorId;
+        if (!finalInstructorId && memberId) {
+            const member = await Member.findByPk(memberId);
+            if (member?.privateLessonInstructorId) {
+                finalInstructorId = member.privateLessonInstructorId;
+            }
+        }
         if (!finalInstructorId) {
             const instructor = await Member.findOne({ where: { userId: currentUser.id, profileType: 'INSTRUCTOR' } });
             finalInstructorId = instructor?.id;
@@ -96,21 +133,69 @@ class TrainingService {
             await TrainingPlanItem.bulkCreate(planItems);
         }
 
-        if (days && days.length > 0) {
-            const planDays = days.map(day => ({
-                ...day,
-                planId: plan.id,
-                id: undefined,
-                isRestDay: day.isRestDay === true || day.isRestDay === 'true'
-            }));
-            await TrainingPlanDay.bulkCreate(planDays);
-        }
+        const fullDays = this.ensureAllSevenDays(days || [], items || []);
+        const planDays = fullDays.map(day => ({
+            ...day,
+            planId: plan.id,
+            id: undefined,
+            isRestDay: day.isRestDay === true || day.isRestDay === 'true'
+        }));
+        await TrainingPlanDay.bulkCreate(planDays);
 
         // Otomasyonlar
         if (memberId) {
             this.syncSchedules(plan.id).catch(e => console.error('Sync Error:', e));
             this.sendWhatsAppNotification(memberId, plan).catch(e => console.error('WhatsApp Error:', e));
         }
+
+        return plan;
+    }
+
+    /**
+     * Var olan antrenman planını ve ilişkili öğeleri günceller
+     */
+    static async updatePlan(planId, planData, currentUser) {
+        const { title, description, memberId, packageId, specialtyId, instructorId, startDate, endDate, items, days, level, isActive } = planData;
+
+        const plan = await TrainingPlan.findByPk(planId);
+        if (!plan) throw new Error('Plan bulunamadı.');
+
+        await plan.update({
+            title,
+            description,
+            memberId: memberId !== undefined ? memberId : plan.memberId,
+            packageId: packageId !== undefined ? packageId : plan.packageId,
+            specialtyId: specialtyId !== undefined ? specialtyId : plan.specialtyId,
+            instructorId: instructorId !== undefined ? instructorId : plan.instructorId,
+            startDate: startDate || plan.startDate,
+            endDate: endDate || plan.endDate,
+            level: level !== undefined ? level : plan.level,
+            isActive: isActive !== undefined ? isActive : plan.isActive
+        });
+
+        if (items !== undefined) {
+            await TrainingPlanItem.destroy({ where: { planId } });
+            if (items && items.length > 0) {
+                const planItems = items
+                    .filter(item => item.exerciseId)
+                    .map(item => ({ ...item, planId, id: undefined }));
+                await TrainingPlanItem.bulkCreate(planItems);
+            }
+        }
+
+        if (days !== undefined || items !== undefined) {
+            await TrainingPlanDay.destroy({ where: { planId } });
+            const fullDays = this.ensureAllSevenDays(days || [], items || []);
+            const planDays = fullDays.map(day => ({
+                ...day,
+                planId,
+                id: undefined,
+                isRestDay: day.isRestDay === true || day.isRestDay === 'true'
+            }));
+            await TrainingPlanDay.bulkCreate(planDays);
+        }
+
+        if (plan.memberId) await this.syncSchedules(plan.id);
 
         return plan;
     }
@@ -223,17 +308,24 @@ class TrainingService {
      * Eğitmen paneli için aktif planları getir
      */
     static async getInstructorDashboardLogs(instructorId, branchId) {
-        const where = { isActive: true };
-        if (instructorId) where.instructorId = instructorId;
+        const where = { isActive: true, memberId: { [Op.ne]: null } };
         if (branchId) where.branchId = branchId;
 
-        // Üyesi olmayan şablon planları elemeli (dashboard için)
-        where.memberId = { [Op.ne]: null };
+        if (instructorId) {
+            where[Op.or] = [
+                { instructorId: instructorId },
+                { '$member.privateLessonInstructorId$': instructorId }
+            ];
+        }
 
         return await TrainingPlan.findAll({
             where,
             include: [
-                { model: Member, as: 'member', attributes: ['id', 'fullName', 'photo', 'startingWeight', 'targetWeight', 'fitnessGoals'] },
+                { 
+                    model: Member, 
+                    as: 'member', 
+                    attributes: ['id', 'fullName', 'photo', 'startingWeight', 'targetWeight', 'fitnessGoals', 'privateLessonInstructorId'] 
+                },
                 { model: TrainingPlanDay, as: 'days' },
                 {
                     model: TrainingPlanItem,
