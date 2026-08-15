@@ -72,19 +72,38 @@ const backendFiles = [
   'uploads' // Resimlerin ve yüklenen dosyaların taşınması için
 ];
 
-// Backend için dosyaları kopyala ve .env dosyasını temizle
+const defaultEnvContent = `# Database
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=behagympro_db
+DB_USER=postgres
+DB_PASS=postgres
+
+# JWT
+JWT_SECRET=beha_gym_pro_secret_2026
+
+# App
+PORT=5000
+NODE_ENV=production
+DB_SYNC=false
+`;
+
+const envSrc = path.join(rootDir, 'backend', '.env');
+const envContent = (fs.existsSync(envSrc) && fs.readFileSync(envSrc, 'utf8').trim().length > 0) 
+  ? fs.readFileSync(envSrc, 'utf8') 
+  : defaultEnvContent;
+
+fs.writeFileSync(path.join(backendDest, '.env'), envContent);
+fs.writeFileSync(path.join(publishDir, '.env'), envContent);
+console.log('✅ .env dosyası hazırlandı.');
+
 backendFiles.forEach(file => {
+  if (file === '.env') return;
   const src = path.join(rootDir, 'backend', file);
   const dest = path.join(backendDest, file);
 
   if (fs.existsSync(src)) {
-    if (file === '.env') {
-      const content = fs.readFileSync(src, 'utf8');
-      fs.writeFileSync(dest, content);
-      console.log('✅ .env dosyası hazırlandı.');
-    } else {
-      fs.copySync(src, dest);
-    }
+    fs.copySync(src, dest);
   }
 });
 
@@ -234,7 +253,7 @@ chmod +x backend/backend-server-linux
 ./backend/backend-server-linux
 `;
 
-fs.writeFileSync(path.join(publishDir, 'start.sh'), startLinuxScript);
+fs.writeFileSync(path.join(publishDir, 'start.sh'), startLinuxScript.replace(/\r\n/g, '\n'));
 execSync(`chmod +x "` + path.join(publishDir, 'start.sh') + `"`, { stdio: 'ignore' });
 
 // Linux için Arka Plan Start Scripti (Daemon / Background)
@@ -244,7 +263,7 @@ cd "$DIR"
 echo "========================================"
 echo "BehaGym Pro - Linux Arka Plan Başlatıcı"
 echo "========================================"
-chmod +x backend/backend-server-linux
+chmod +x backend/backend-server-linux 2>/dev/null || true
 nohup ./backend/backend-server-linux > server-log.txt 2>&1 &
 echo "[BAŞARILI] BehaGym Pro arka planda başlatıldı."
 echo "Erişim Adresi: http://localhost:5000"
@@ -252,7 +271,7 @@ echo "Log takibi: tail -f server-log.txt"
 echo "Durdurmak için: ./stop.sh"
 `;
 
-fs.writeFileSync(path.join(publishDir, 'start-bg.sh'), startBgLinuxScript);
+fs.writeFileSync(path.join(publishDir, 'start-bg.sh'), startBgLinuxScript.replace(/\r\n/g, '\n'));
 execSync(`chmod +x "` + path.join(publishDir, 'start-bg.sh') + `"`, { stdio: 'ignore' });
 
 // Linux için Stop Scripti
@@ -264,7 +283,7 @@ pkill -f backend-server-linux
 echo "[BAŞARILI] Tüm BehaGym servisleri kapatıldı."
 `;
 
-fs.writeFileSync(path.join(publishDir, 'stop.sh'), stopLinuxScript);
+fs.writeFileSync(path.join(publishDir, 'stop.sh'), stopLinuxScript.replace(/\r\n/g, '\n'));
 execSync(`chmod +x "` + path.join(publishDir, 'stop.sh') + `"`, { stdio: 'ignore' });
 
 // Linux için Tek Tık Güncelleme Scripti (Target makinadaki .env ve uploads'ı korur)
@@ -301,8 +320,11 @@ echo "Log takibi: tail -f server-log.txt"
 echo "========================================"
 `;
 
-fs.writeFileSync(path.join(publishDir, 'update-linux.sh'), updateLinuxScript);
+fs.writeFileSync(path.join(publishDir, 'update-linux.sh'), updateLinuxScript.replace(/\r\n/g, '\n'));
 execSync(`chmod +x "` + path.join(publishDir, 'update-linux.sh') + `"`, { stdio: 'ignore' });
+if (fs.existsSync(path.join(backendDest, 'backend-server-linux'))) {
+  execSync(`chmod +x "` + path.join(backendDest, 'backend-server-linux') + `"`, { stdio: 'ignore' });
+}
 
 // Linux Masaüstü Kısayolu (.desktop)
 const desktopContent = `[Desktop Entry]

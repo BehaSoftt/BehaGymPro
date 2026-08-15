@@ -1,22 +1,44 @@
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
 const isPkg = typeof process.pkg !== 'undefined';
-const envPath = isPkg 
-  ? path.join(path.dirname(process.execPath), '.env')
-  : path.join(process.cwd(), '.env');
+const envCandidates = [
+  isPkg ? path.join(path.dirname(process.execPath), '.env') : null,
+  isPkg ? path.join(path.dirname(process.execPath), 'backend', '.env') : null,
+  path.join(process.cwd(), '.env'),
+  path.join(process.cwd(), 'backend', '.env'),
+  path.join(__dirname, '../.env')
+].filter(Boolean);
 
-dotenv.config({ path: envPath });
+let loadedEnvPath = null;
+for (const p of envCandidates) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p, override: true });
+    if (process.env.DB_NAME) {
+      loadedEnvPath = p;
+      break;
+    }
+  }
+}
+
+// Güvenli Varsayılan Değerler (Environment Fallbacks)
+process.env.DB_HOST = process.env.DB_HOST || '127.0.0.1';
+process.env.DB_PORT = process.env.DB_PORT || '5432';
+process.env.DB_NAME = process.env.DB_NAME || 'behagympro_db';
+process.env.DB_USER = process.env.DB_USER || 'postgres';
+process.env.DB_PASS = process.env.DB_PASS || 'postgres';
+process.env.PORT = process.env.PORT || '5000';
 
 const express = require('express');
 const cors = require('cors');
 
 console.log('--- [BOOT] SİSTEM BAŞLATILIYOR ---');
-console.log(`[BOOT] Env Path: ${envPath}`);
+console.log(`[BOOT] Env Path: ${loadedEnvPath || 'VARSAYILAN (FALLBACK)'}`);
 console.log(`[BOOT] DB_HOST: ${process.env.DB_HOST}`);
 console.log(`[BOOT] DB_USER: ${process.env.DB_USER}`);
 console.log(`[BOOT] DB_NAME: ${process.env.DB_NAME}`);
-console.log(`[BOOT] PORT: ${process.env.PORT || 5000}`);
+console.log(`[BOOT] PORT: ${process.env.PORT}`);
 
 // JWT Secret kontrolü
 const secret = process.env.JWT_SECRET;
