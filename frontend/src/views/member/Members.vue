@@ -462,11 +462,15 @@ watch(showForm, (val) => {
   pageSubtitle.value = val ? (editingId.value ? 'DÜZENLE' : 'YENİ KAYIT') : ''
 })
 
+const generate10DigitCode = () => {
+  return Math.floor(1000000000 + Math.random() * 9000000000).toString()
+}
+
 const openAddMemberModal = () => {
   editingId.value = null
   const defaultBranch = auth.user?.branchId || branches.value?.[0]?.id || ''
   newMember.value = {
-    fullName: '', memberCode: '', gender: '', bloodGroup: '',
+    fullName: '', memberCode: generate10DigitCode(), gender: '', bloodGroup: '',
     membershipType: 'STANDART', photo: null, phone: '', email: '',
     emergencyPhone: '', height: null, weight: null,
     registrationDate: new Date().toISOString().split('T')[0],
@@ -504,6 +508,7 @@ const startEdit = async (member) => {
   
   newMember.value = { 
     ...pureData,
+    memberCode: (!pureData.memberCode || pureData.memberCode === '0') ? generate10DigitCode() : pureData.memberCode,
     branchId: pureData.branchId || Branch?.id || auth.user?.branchId || branches.value?.[0]?.id || '',
     specialtyId: pureData.specialtyId || pureData.specialty?.id || specialty?.id || '',
     beltBranchId: pureData.beltBranchId || beltBranch?.id || '',

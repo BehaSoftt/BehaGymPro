@@ -106,6 +106,15 @@
         <div v-if="sidebarOpen" class="px-3 pt-4">
           <div class="flex p-1 bg-slate-900/80 border border-slate-800 rounded-lg shadow-inner gap-1">
             <button 
+              @click="educationMode = 'ALL'; selectedPlan = null"
+              :class="[
+                'flex-1 py-2 text-[0.55rem] font-black uppercase tracking-tight transition-all duration-300 rounded-md flex flex-col items-center justify-center',
+                educationMode === 'ALL' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'text-slate-500 hover:text-slate-300'
+              ]"
+            >
+              <Zap class="w-3 h-3 mb-0.5" /> TÜMÜ
+            </button>
+            <button 
               @click="educationMode = 'GENERAL'; selectedPlan = null"
               :class="[
                 'flex-1 py-2 text-[0.55rem] font-black uppercase tracking-tight transition-all duration-300 rounded-md flex flex-col items-center justify-center',
@@ -777,7 +786,7 @@ const currentWeek = ref(1)
 const memberSearch = ref('')
 const selectedInstructorFilter = ref('')
 const statusFilter = ref(null)
-const educationMode = ref('GENERAL') // 'PT', 'GROUP', or 'GENERAL'
+const educationMode = ref('ALL') // 'ALL', 'PT', 'GROUP', or 'GENERAL'
 
 // Approve Modal State
 const showApproveModal = ref(false)
@@ -795,9 +804,13 @@ const daysOfWeek = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cu
 // Filter by selected instructor (admin only)
 const filteredPlans = computed(() => {
   if (!selectedInstructorFilter.value) return plans.value
+  const targetId = String(selectedInstructorFilter.value)
   return plans.value.filter(p =>
-    p.instructorId === selectedInstructorFilter.value ||
-    p.member?.privateLessonInstructorId === selectedInstructorFilter.value
+    String(p.instructorId) === targetId ||
+    String(p.member?.privateLessonInstructorId) === targetId ||
+    String(p.member?.instructorId) === targetId ||
+    String(p.instructor?.id) === targetId ||
+    String(p.instructor?.userId) === targetId
   )
 })
 
@@ -807,16 +820,15 @@ const searchedPlans = computed(() => {
   
   console.log('[TRACKER] Filtering Base Plans:', base.length, 'Current Mode:', educationMode.value)
 
-  // Filter by PT vs Group vs Fitness
+  // Filter by PT vs Group vs Fitness vs ALL
   if (educationMode.value === 'PT') {
-    // Plans that have 'PT' in the title or are explicitly marked as PT
-    base = base.filter(p => !p.isGroup && (p.title?.toUpperCase().includes('PT') || p.planType === 'PT'))
+    base = base.filter(p => p.isGroup || (p.title?.toUpperCase().includes('PT') || p.planType === 'PT'))
   } else if (educationMode.value === 'GROUP') {
     base = base.filter(p => p.isGroup)
-  } else {
-    // Generic/General plans
+  } else if (educationMode.value === 'GENERAL') {
     base = base.filter(p => !p.isGroup && !p.title?.toUpperCase().includes('PT') && p.planType !== 'PT')
   }
+  // If educationMode === 'ALL', no filtering applied!
   
   console.log('[TRACKER] After Mode Filter:', base.length)
 

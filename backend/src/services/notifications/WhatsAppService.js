@@ -48,11 +48,14 @@ class WhatsAppService {
         return undefined;
     }
 
+    static initError = null;
+
     /**
      * WhatsApp İstemcisini Başlatır
      */
     static initialize() {
         console.log('[WhatsApp] Bağlantı başlatılıyor...');
+        this.initError = null;
 
         const isPkg = typeof process.pkg !== 'undefined';
         const sessionsPath = isPkg
@@ -102,6 +105,7 @@ class WhatsAppService {
             console.log('\n[WhatsApp] LÜTFEN BU QR KODU OKUTUN:');
             qrcode.generate(qr, { small: true });
             this.latestQr = qr;
+            this.initError = null;
             try {
                 const QRCode = require('qrcode');
                 this.latestQrImage = await QRCode.toDataURL(qr);
@@ -115,6 +119,7 @@ class WhatsAppService {
             this.isReady = true;
             this.latestQr = null;
             this.latestQrImage = null;
+            this.initError = null;
         });
 
         this.client.on('authenticated', () => {
@@ -124,6 +129,7 @@ class WhatsAppService {
         this.client.on('auth_failure', () => {
             console.error('[WhatsApp] Oturum hatası! Lütfen QR kodu tekrar okutun.');
             this.isReady = false;
+            this.initError = 'Oturum doğrulama hatası (auth_failure)';
         });
 
         this.client.on('disconnected', (reason) => {
@@ -133,6 +139,7 @@ class WhatsAppService {
 
         this.client.initialize().catch(err => {
             console.error('[WhatsApp INIT ERROR]:', err);
+            this.initError = err?.message || String(err);
         });
     }
 

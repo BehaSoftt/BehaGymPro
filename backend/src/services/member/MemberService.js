@@ -4,7 +4,7 @@ const {
     SalesItem, BeltExam, BeltExamParticipant, 
     PaymentSchedule, PaymentPlan, SportSpecialty,
     Branch, Company, MemberSportProfile, SportGroupMember,
-    Attendance,
+    Attendance, FinancialTransaction,
     sequelize
 } = require('../../models');
 const { Op } = require('sequelize');

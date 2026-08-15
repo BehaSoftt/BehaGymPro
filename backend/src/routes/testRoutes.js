@@ -22,8 +22,28 @@ router.get('/whatsapp-status', authMiddleware, async (req, res) => {
         res.json({
             isReady: WhatsAppService.isReady,
             qrImage: WhatsAppService.latestQrImage || null,
-            qr: WhatsAppService.latestQr || null
+            qr: WhatsAppService.latestQr || null,
+            initError: WhatsAppService.initError || null,
+            chromePath: WhatsAppService.getChromePath() || 'Sistem Chrome bulunamadı!'
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/whatsapp-restart', authMiddleware, async (req, res) => {
+    try {
+        const WhatsAppService = require('../services/notifications/WhatsAppService');
+        if (WhatsAppService.client) {
+            try { await WhatsAppService.client.destroy(); } catch (_) {}
+            WhatsAppService.client = null;
+        }
+        WhatsAppService.isReady = false;
+        WhatsAppService.latestQr = null;
+        WhatsAppService.latestQrImage = null;
+        WhatsAppService.initError = null;
+        WhatsAppService.initialize();
+        res.json({ success: true, message: 'WhatsApp servisi yeniden başlatılıyor...' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

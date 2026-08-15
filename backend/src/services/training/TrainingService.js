@@ -306,15 +306,22 @@ class TrainingService {
     /**
      * Eğitmen paneli için aktif planları getir
      */
-    static async getInstructorDashboardLogs(instructorId, branchId) {
+    static async getInstructorDashboardLogs(instructorId = null, branchId = null, userId = null) {
         const where = { isActive: true, memberId: { [Op.ne]: null } };
-        if (branchId) where.branchId = branchId;
 
-        if (instructorId) {
-            where[Op.or] = [
-                { instructorId: instructorId },
-                { '$member.privateLessonInstructorId$': instructorId }
-            ];
+        if (instructorId || userId) {
+            const orConditions = [];
+            if (instructorId) {
+                orConditions.push({ instructorId: instructorId });
+                orConditions.push({ '$member.privateLessonInstructorId$': instructorId });
+                orConditions.push({ '$member.instructorId$': instructorId });
+            }
+            if (userId) {
+                orConditions.push({ instructorId: userId });
+                orConditions.push({ '$member.privateLessonInstructorId$': userId });
+                orConditions.push({ '$member.instructorId$': userId });
+            }
+            where[Op.or] = orConditions;
         }
 
         return await TrainingPlan.findAll({

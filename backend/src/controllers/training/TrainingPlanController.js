@@ -137,7 +137,7 @@ class TrainingPlanController {
         const adminRoles = ['ADMIN', 'SUPER_MASTER', 'MASTER', 'MUDUR', 'RECEPTIONIST'];
         
         if (adminRoles.includes(role)) {
-            const logs = await TrainingService.getInstructorDashboardLogs(null, branchId);
+            const logs = await TrainingService.getInstructorDashboardLogs(null, null, null);
             console.log(`[TRAINING_CONTROLLER] Privileged role (${role}) found ${logs?.length || 0} plans`);
             return res.json(logs);
         }
@@ -146,9 +146,9 @@ class TrainingPlanController {
         if (!instructor) {
             instructor = await Member.findOne({ where: { userId } });
         }
-        if (!instructor) return res.json([]); // Return empty if no instructor profile found
 
-        const logs = await TrainingService.getInstructorDashboardLogs(instructor.id, branchId);
+        const instId = instructor ? instructor.id : null;
+        const logs = await TrainingService.getInstructorDashboardLogs(instId, null, userId);
         res.json(logs);
     });
 

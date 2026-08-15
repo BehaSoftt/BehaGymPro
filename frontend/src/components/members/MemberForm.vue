@@ -74,20 +74,32 @@
 
           <div class="grid grid-cols-1 md:grid-cols-8 gap-6 items-center p-4 bg-slate-900/40 border border-slate-700 shadow-xl">
              <div class="md:col-span-4 space-y-4">
-                <BaseInput 
-                  :modelValue="localMember.memberCode"
-                  @update:modelValue="handleCodeInput"
-                  @keydown.enter.prevent
-                  label="ÜYE NO / KART ID (Giriş Anahtarı)"
-                  placeholder="MAKS. 15 RAKAM..."
-                  maxlength="15"
-                  required
-                >
-                  <template #icon><QrCode class="w-4 h-4" /></template>
-                </BaseInput>
+                <div class="flex items-end gap-2">
+                   <div class="flex-1">
+                      <BaseInput 
+                        :modelValue="localMember.memberCode"
+                        @update:modelValue="handleCodeInput"
+                        @keydown.enter.prevent
+                        label="ÜYE NO / KART ID (Giriş Anahtarı)"
+                        placeholder="10 HANELİ KOD..."
+                        maxlength="15"
+                        required
+                      >
+                        <template #icon><QrCode class="w-4 h-4" /></template>
+                      </BaseInput>
+                   </div>
+                   <button 
+                      type="button" 
+                      @click="generateRandom10DigitCode"
+                      class="h-11 px-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 hover:border-rose-500 text-rose-400 text-[0.65rem] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 rounded-lg active:scale-95 shadow-md flex-none mb-0.5"
+                      title="10 Haneli Otomatik Kod Üret"
+                   >
+                      <RefreshCw class="w-3.5 h-3.5" /> 10 HANELİ KOD
+                   </button>
+                </div>
                 <div class="p-3 bg-slate-800/30 border border-slate-700">
                    <p class="text-[0.6rem] text-slate-500 font-medium tracking-widest leading-relaxed">
-                      Fiziksel Mifare kart kullanıyorsanız imleç buradayken kartı okutun. Manuel kod giriyorsanız benzersiz olduğundan emin olun.
+                      Fiziksel Mifare kart kullanıyorsanız imleç buradayken kartı okutun. Otomatik 10 haneli benzersiz kod tanımlanmıştır.
                    </p>
                 </div>
              </div>
@@ -630,7 +642,7 @@ import axios from 'axios'
 import { 
   Users, UserPlus, X, QrCode, UserCheck, GraduationCap, 
   Phone, History, Activity, LayoutGrid, Settings, Info,
-  Send, Save, Check, Trophy, ShieldCheck, CreditCard
+  Send, Save, Check, Trophy, ShieldCheck, CreditCard, RefreshCw
 } from 'lucide-vue-next'
 
 // Base Components
@@ -802,12 +814,20 @@ watch(() => localMember.value.specialtyId, (newId) => {
   fetchGroups(newId)
 })
 
+const generateRandom10DigitCode = () => {
+  const code = Math.floor(1000000000 + Math.random() * 9000000000).toString()
+  localMember.value = { ...localMember.value, memberCode: code }
+}
+
 onMounted(() => {
   if (!localMember.value.lessonTypes) {
     localMember.value = { ...localMember.value, lessonTypes: [] }
   }
   if (!localMember.value.specialties) {
     localMember.value = { ...localMember.value, specialties: [] }
+  }
+  if (!localMember.value.memberCode || localMember.value.memberCode === '0' || localMember.value.memberCode === '') {
+    generateRandom10DigitCode()
   }
   if (localMember.value.specialtyId) fetchGroups(localMember.value.specialtyId)
 })
