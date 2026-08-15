@@ -45,7 +45,7 @@ const twoFALimiter = rateLimit({
 // Member Creation Rate Limiter (Spam kayıt önleme)
 const memberCreationLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 saat
-    max: 20, // Saatte maksimum 20 üye kaydı
+    max: 1000, // Saatte maksimum 1000 üye kaydı (Salon kayıtları için genişletildi)
     message: {
         status: 'ERROR',
         message: 'Çok fazla üye kaydı yapıldı. Lütfen 1 saat sonra tekrar deneyin.'

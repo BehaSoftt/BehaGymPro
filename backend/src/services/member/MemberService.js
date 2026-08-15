@@ -298,13 +298,12 @@ class MemberService {
             }
         }
 
-        if (email) {
-            const existingUser = await User.findOne({ where: { email } });
+        let authEmail = email ? email.trim().toLowerCase() : null;
+        if (authEmail) {
+            const existingUser = await User.findOne({ where: { email: authEmail } });
             if (existingUser) {
-                console.log('[DEBUG] Email already exists:', email);
-                const err = new Error('Bu e-posta adresi zaten başka bir kullanıcı tarafından kullanılıyor.');
-                err.statusCode = 400;
-                throw err;
+                console.log('[MemberService] Ortak/tekrarlayan e-posta algılandı:', authEmail, 'User hesabı için benzersiz sistem e-postası üretiliyor...');
+                authEmail = `uye_${Date.now()}_${Math.floor(Math.random() * 10000)}@behagym.local`;
             }
         }
 
@@ -317,7 +316,7 @@ class MemberService {
                 const user = await User.create({
                     username: username || Math.random().toString(36).slice(-8),
                     passwordHash: hashedPassword,
-                    email,
+                    email: authEmail,
                     role: profileType === 'INSTRUCTOR' ? 'EĞİTMEN' : (profileType === 'PERSONNEL' ? 'RECEPTIONIST' : (profileType === 'USER' ? 'USER' : 'MEMBER')),
                     companyId: finalCompanyId,
                     branchId: finalBranchId
