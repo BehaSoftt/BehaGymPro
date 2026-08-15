@@ -53,8 +53,12 @@ class WhatsAppService {
     /**
      * WhatsApp İstemcisini Başlatır
      */
-    static initialize() {
-        console.log('[WhatsApp] Bağlantı başlatılıyor...');
+    static initialize(retryCount = 0) {
+        if (retryCount > 10) {
+            console.error('[WhatsApp] Maksimum bağlantı deneme sınırına ulaşıldı.');
+            return;
+        }
+        console.log(`[WhatsApp] Bağlantı başlatılıyor... (Deneme ${retryCount + 1})`);
         this.initError = null;
 
         const isPkg = typeof process.pkg !== 'undefined';
@@ -62,12 +66,13 @@ class WhatsAppService {
             ? path.join(path.dirname(process.execPath), 'sessions')
             : './sessions';
 
-        // Chrome lock dosyalarını temizle (nodemon restart sonrası oluşan stale lock'ları önler)
+        // Chrome lock dosyalarını temizle (nodemon/restart sonrası oluşan stale lock'ları önler)
         const fs = require('fs');
         const lockFiles = [
             path.join(sessionsPath, 'session', 'SingletonLock'),
             path.join(sessionsPath, 'session', 'SingletonCookie'),
             path.join(sessionsPath, 'session', 'SingletonSocket'),
+            path.join(sessionsPath, 'session', 'DevToolsActivePort'),
         ];
         lockFiles.forEach(f => { try { if (fs.existsSync(f)) { fs.unlinkSync(f); console.log('[WhatsApp] Lock temizlendi:', path.basename(f)); } } catch (_) {} });
 
@@ -87,60 +92,79 @@ class WhatsAppService {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu'
+                '--disable-gpu',
+                '--disable-extensions'
             ]
         };
         if (chromePath) {
             puppeteerOptions.executablePath = chromePath;
         }
 
-        this.client = new Client({
-            authStrategy: new LocalAuth({
-                dataPath: sessionsPath // Oturumu bilgisayarda saklar
-            }),
-            puppeteer: puppeteerOptions
-        });
+        try {
+            this.client = new Client({
+                authStrategy: new LocalAuth({
+                    dataPath: sessionsPath // Oturumu bilgisayarda saklar
+                }),
+                puppeteer: puppeteerOptions
+            });
 
-        this.client.on('qr', async (qr) => {
-            console.log('\n[WhatsApp] LÜTFEN BU QR KODU OKUTUN:');
-            qrcode.generate(qr, { small: true });
-            this.latestQr = qr;
-            this.initError = null;
-            try {
-                const QRCode = require('qrcode');
-                this.latestQrImage = await QRCode.toDataURL(qr);
-            } catch (e) {
-                console.error('[WhatsApp] QR DataURL dönüştürme uyarısı:', e);
-            }
-        });
+            this.client.on('qr', async (qr) => {
+                console.log('\n[WhatsApp] LÜTFEN BU QR KODU OKUTUN:');
+                qrcode.generate(qr, { small: true });
+                this.latestQr = qr;
+                this.initError = null;
+                try {
+                    const QRCode = require('qrcode');
+                    this.latestQrImage = await QRCode.toDataURL(qr);
+                } catch (e) {
+                    console.error('[WhatsApp] QR DataURL dönüştürme uyarısı:', e);
+                }
+            });
 
-        this.client.on('ready', () => {
-            console.log('\n[WhatsApp] BAĞLANTI BAŞARILI! Cihaz hazır.');
-            this.isReady = true;
-            this.latestQr = null;
-            this.latestQrImage = null;
-            this.initError = null;
-        });
+            this.client.on('ready', () => {
+                console.log('\n[WhatsApp] BAĞLANTI BAŞARILI! Cihaz hazır.');
+                this.isReady = true;
+                this.latestQr = null;
+                this.latestQrImage = null;
+                this.initError = null;
+            });
 
-        this.client.on('authenticated', () => {
-            console.log('[WhatsApp] Oturum doğrulandı.');
-        });
+            this.client.on('authenticated', () => {
+                console.log('[WhatsApp] Oturum doğrulandı.');
+            });
 
-        this.client.on('auth_failure', () => {
-            console.error('[WhatsApp] Oturum hatası! Lütfen QR kodu tekrar okutun.');
-            this.isReady = false;
-            this.initError = 'Oturum doğrulama hatası (auth_failure)';
-        });
+            this.client.on('auth_failure', () => {
+                console.error('[WhatsApp] Oturum hatası! Lütfen QR kodu tekrar okutun.');
+                this.isReady = false;
+                this.initError = 'Oturum doğrulama hatası (auth_failure)';
+            });
 
-        this.client.on('disconnected', (reason) => {
-            console.warn('[WhatsApp] Bağlantı koptu:', reason);
-            this.isReady = false;
-        });
+            this.client.on('disconnected', (reason) => {
+                console.warn('[WhatsApp] Bağlantı koptu:', reason);
+                this.isReady = false;
+            });
 
-        this.client.initialize().catch(err => {
-            console.error('[WhatsApp INIT ERROR]:', err);
+            this.client.initialize().catch(async (err) => {
+                console.error(`[WhatsApp INIT ERROR] (Deneme ${retryCount + 1}):`, err?.message || err);
+                this.initError = err?.message || String(err);
+                this.isReady = false;
+
+                if (retryCount < 5) {
+                    console.log('[WhatsApp] 10 saniye içinde otomatik tekrar bağlanılıyor...');
+                    setTimeout(() => {
+                        try {
+                            if (this.client) {
+                                this.client.destroy().catch(() => {});
+                            }
+                        } catch (_) {}
+                        this.initialize(retryCount + 1);
+                    }, 10000);
+                }
+            });
+        } catch (err) {
+            console.error('[WhatsApp INITIALIZE CRASH]:', err);
             this.initError = err?.message || String(err);
-        });
+        }
     }
 
     /**
