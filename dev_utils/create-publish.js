@@ -12,7 +12,7 @@ const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const now = new Date();
 const dateStr = now.toISOString().slice(0, 10); // 2025-02-25
 const timeStr = now.toTimeString().slice(0, 5).replace(':', '-'); // 14-30
-const buildName = `BehaGymPro-${dateStr}-${timeStr}`;
+const buildName = 'BehaGymPro';
 const publishDir = path.join(rootDir, 'publish', buildName);
 
 console.log(`📦 Build Adı: ${buildName}\n`);
