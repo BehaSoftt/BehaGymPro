@@ -516,7 +516,15 @@ const getDayData = (dayIndex) => {
    }
    return day
 }
-const isRestDay = (dayIndex) => getDayData(dayIndex).isRestDay
+const isRestDay = (dayIndex) => {
+  const day = getDayData(dayIndex)
+  const hasItems = (newPlan.value.items || []).some(i => Number(i.dayOfWeek) === dayIndex)
+  if (hasItems) {
+    day.isRestDay = false
+    return false
+  }
+  return day.isRestDay === true || day.isRestDay === 'true'
+}
 const toggleRestDay = (dayIndex) => { 
   const day = getDayData(dayIndex)
   day.isRestDay = !day.isRestDay
@@ -707,7 +715,7 @@ const startEdit = (plan) => {
   pCopy.days = initSevenDays(pCopy.days || [], pCopy.items || [])
   newPlan.value = pCopy
   showAddModal.value = true
-  if (plan.memberId) generateTimeline(plan.member) 
+  if (plan.memberId) generateTimeline(plan.member || members.value.find(m => m.id === plan.memberId)) 
 }
 
 const duplicatePlan = (plan) => { 

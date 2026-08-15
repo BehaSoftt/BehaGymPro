@@ -170,8 +170,10 @@ const internalPlan = computed({
 })
 
 const isDayRest = (idx) => {
-  const day = internalPlan.value.days.find(d => d.dayOfWeek === idx)
-  return day ? day.isRestDay : false
+  const day = internalPlan.value.days.find(d => Number(d.dayOfWeek) === idx)
+  const hasItems = (internalPlan.value.items || []).some(i => Number(i.dayOfWeek) === idx)
+  if (hasItems) return false
+  return day ? (day.isRestDay === true || day.isRestDay === 'true') : true
 }
 
 const getDayItemsCount = (idx) => {
