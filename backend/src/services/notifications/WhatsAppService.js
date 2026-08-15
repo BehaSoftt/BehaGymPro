@@ -29,6 +29,25 @@ class WhatsAppService {
         birthday: String.fromCodePoint(0x1F382)      // 🎂
     };
 
+    static getChromePath() {
+        const fs = require('fs');
+        if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) {
+            return process.env.CHROME_PATH;
+        }
+        const candidates = [
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/snap/bin/chromium',
+            '/usr/bin/chrome'
+        ];
+        for (const p of candidates) {
+            if (fs.existsSync(p)) return p;
+        }
+        return undefined;
+    }
+
     /**
      * WhatsApp İstemcisini Başlatır
      */
@@ -49,25 +68,53 @@ class WhatsAppService {
         ];
         lockFiles.forEach(f => { try { if (fs.existsSync(f)) { fs.unlinkSync(f); console.log('[WhatsApp] Lock temizlendi:', path.basename(f)); } } catch (_) {} });
 
+        const chromePath = this.getChromePath();
+        if (chromePath) {
+            console.log('[WhatsApp] Sistem Chrome/Chromium tespit edildi:', chromePath);
+        } else {
+            console.log('[WhatsApp] Sistem Chrome bulunamadı, Varsayılan Puppeteer başlatılıyor...');
+        }
+
+        const puppeteerOptions = {
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu'
+            ]
+        };
+        if (chromePath) {
+            puppeteerOptions.executablePath = chromePath;
+        }
+
         this.client = new Client({
             authStrategy: new LocalAuth({
                 dataPath: sessionsPath // Oturumu bilgisayarda saklar
             }),
-            puppeteer: {
-                headless: true,
-                executablePath: process.env.CHROME_PATH || '/home/behasoft/.cache/puppeteer/chrome/linux-149.0.7827.22/chrome-linux64/chrome',
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            }
+            puppeteer: puppeteerOptions
         });
 
-        this.client.on('qr', (qr) => {
+        this.client.on('qr', async (qr) => {
             console.log('\n[WhatsApp] LÜTFEN BU QR KODU OKUTUN:');
             qrcode.generate(qr, { small: true });
+            this.latestQr = qr;
+            try {
+                const QRCode = require('qrcode');
+                this.latestQrImage = await QRCode.toDataURL(qr);
+            } catch (e) {
+                console.error('[WhatsApp] QR DataURL dönüştürme uyarısı:', e);
+            }
         });
 
         this.client.on('ready', () => {
             console.log('\n[WhatsApp] BAĞLANTI BAŞARILI! Cihaz hazır.');
             this.isReady = true;
+            this.latestQr = null;
+            this.latestQrImage = null;
         });
 
         this.client.on('authenticated', () => {

@@ -16,6 +16,19 @@ router.get('/trigger-reminders', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/whatsapp-status', authMiddleware, async (req, res) => {
+    try {
+        const WhatsAppService = require('../services/notifications/WhatsAppService');
+        res.json({
+            isReady: WhatsAppService.isReady,
+            qrImage: WhatsAppService.latestQrImage || null,
+            qr: WhatsAppService.latestQr || null
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 /**
  * Belirli bir üyeye test mesajı gönder (GELİŞTİRİLMİŞ TEST)
  */
