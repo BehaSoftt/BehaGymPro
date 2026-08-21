@@ -6,7 +6,12 @@ const { sequelize } = require('../../models');
  */
 class DatabaseSchemaService {
     static async updateSchema() {
-        const SCHEMA_VERSION = '2024.03.24.010'; // Adres alanları ve yeni ölçüm alanları eklendi
+        const SCHEMA_VERSION = '2026.08.21.002'; // GroupClasses groupSchedules ve yeni şema alanları
+
+        // Her zaman çalıştırılacak kritik sütun eklentileri (Fail-safe)
+        try {
+            await sequelize.query('ALTER TABLE "GroupClasses" ADD COLUMN IF NOT EXISTS "groupSchedules" JSONB DEFAULT \'[]\'::JSONB');
+        } catch (_) {}
 
         // 1. Durum Kontrolü
         try {
