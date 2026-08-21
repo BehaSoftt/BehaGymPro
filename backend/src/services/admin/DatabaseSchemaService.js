@@ -176,7 +176,8 @@ class DatabaseSchemaService {
             'ALTER TABLE "BodyMeasurements" ADD COLUMN IF NOT EXISTS "rightHamstring" DECIMAL(5, 2)',
             'ALTER TABLE "BodyMeasurements" ADD COLUMN IF NOT EXISTS "leftHamstring" DECIMAL(5, 2)',
             'ALTER TABLE "BodyMeasurements" ADD COLUMN IF NOT EXISTS "rightCalf" DECIMAL(5, 2)',
-            'ALTER TABLE "BodyMeasurements" ADD COLUMN IF NOT EXISTS "leftCalf" DECIMAL(5, 2)'
+            'ALTER TABLE "BodyMeasurements" ADD COLUMN IF NOT EXISTS "leftCalf" DECIMAL(5, 2)',
+            'ALTER TABLE "GroupClasses" ADD COLUMN IF NOT EXISTS "groupSchedules" JSONB DEFAULT \'[]\'::JSONB'
         ];
 
         console.log(`--- [DB] Kritik Şema Güncellemesi Başlatıldı (${queries.length} sorgu) ---`);

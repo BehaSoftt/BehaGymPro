@@ -59,26 +59,91 @@
               </div>
 
               <div class="space-y-6">
-                <div class="flex items-center gap-2 p-2 bg-slate-900/50 border border-slate-700/50">
-                  <Clock class="w-3.5 h-3.5 text-amber-400" />
-                  <span class="text-[0.85rem] font-medium text-slate-300 uppercase tracking-widest">Saat & Günler</span>
-                </div>
-                <div class="space-y-6">
-                  <div class="grid grid-cols-2 gap-4">
-                    <BaseInput v-model="form.startTime" type="time" label="Giriş Saati" required />
-                    <BaseInput v-model="form.endTime" type="time" label="Çıkış Saati" required />
+                <div class="flex items-center justify-between p-2 bg-slate-900/50 border border-slate-700/50">
+                  <div class="flex items-center gap-2">
+                    <Clock class="w-3.5 h-3.5 text-amber-400" />
+                    <span class="text-[0.85rem] font-medium text-slate-300 uppercase tracking-widest">Ders Günleri & Seans Saatleri</span>
                   </div>
+                  <button 
+                    v-if="form.days?.length > 1 && (form.groupSchedules?.length || 0) > 0"
+                    type="button"
+                    @click="copyFirstDaySlotsToAll"
+                    class="px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-[0.6rem] font-black uppercase tracking-wider transition-all flex items-center gap-1 rounded"
+                    title="İstediğiniz ilk günün saatlerini seçili tüm günlere kopyalar"
+                  >
+                    <Copy class="w-3 h-3" /> İlk Günün Saatlerini Tüm Günlere Uygula
+                  </button>
+                </div>
+
+                <div class="space-y-6">
                   <div>
-                    <label class="block text-[0.75rem] font-medium text-slate-500 uppercase mb-3 ml-1">Ders Günleri</label>
-                    <div class="grid grid-cols-4 gap-2">
+                    <label class="block text-[0.75rem] font-medium text-slate-500 uppercase mb-3 ml-1">DERS GÜNLERİ SEÇİMİ</label>
+                    <div class="grid grid-cols-7 gap-2">
                       <button 
-                        v-for="(day, index) in ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']" 
+                        v-for="(day, index) in dayShortNames" 
                         :key="index" 
                         type="button" 
                         @click="toggleDay(index)"
-                        :class="form.days.includes(index) ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-600'"
-                        class="py-2.5 border text-[0.75rem] font-medium uppercase transition-all hover:text-white"
+                        :class="form.days.includes(index) ? 'bg-emerald-600 border-emerald-500 text-white font-bold shadow-md' : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300'"
+                        class="py-2.5 border text-[0.75rem] uppercase transition-all rounded"
                       > {{ day }} </button>
+                    </div>
+                  </div>
+
+                  <!-- Seans Detayları (Gün Bazlı Saat Çiftleri) -->
+                  <div v-if="form.days?.length > 0" class="space-y-4 pt-2 border-t border-slate-800">
+                    <label class="block text-[0.75rem] font-medium text-slate-400 uppercase ml-1">GÜNLERE ÖZEL SEANS SAATLERİ</label>
+
+                    <div v-for="dayIdx in sortedSelectedDays" :key="dayIdx" class="bg-slate-900/60 border border-slate-800 p-4 space-y-3 rounded-lg">
+                      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span class="text-[0.7rem] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Calendar class="w-3.5 h-3.5" /> {{ dayFullNames[dayIdx] }}
+                        </span>
+                        <button 
+                          type="button"
+                          @click="addSlotToDay(dayIdx)"
+                          class="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 text-[0.6rem] font-black uppercase tracking-wider transition-all flex items-center gap-1 rounded"
+                        >
+                          <Plus class="w-3 h-3" /> Seans Ekle
+                        </button>
+                      </div>
+
+                      <div class="space-y-2">
+                        <div 
+                          v-for="(slot, sIdx) in getDaySlots(dayIdx)" 
+                          :key="sIdx"
+                          class="grid grid-cols-12 gap-3 items-center bg-slate-950/80 p-2 border border-slate-800/80 rounded"
+                        >
+                          <div class="col-span-5">
+                            <BaseInput 
+                              v-model="slot.startTime" 
+                              @update:modelValue="syncMainTimes"
+                              type="time" 
+                              label="Başlangıç" 
+                              required 
+                            />
+                          </div>
+                          <div class="col-span-5">
+                            <BaseInput 
+                              v-model="slot.endTime" 
+                              @update:modelValue="syncMainTimes"
+                              type="time" 
+                              label="Bitiş" 
+                              required 
+                            />
+                          </div>
+                          <div class="col-span-2 flex justify-end pt-5">
+                            <button 
+                              type="button" 
+                              @click="removeSlot(dayIdx, sIdx)"
+                              class="w-9 h-9 flex items-center justify-center bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/30 text-rose-400 transition-all rounded"
+                              title="Seansı Sil"
+                            >
+                              <Trash2 class="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -105,7 +170,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { Plus, Clock, X, Check, Save } from 'lucide-vue-next'
+import { Plus, Clock, X, Check, Save, Copy, Calendar, Trash2 } from 'lucide-vue-next'
 import BaseInput from '../base/BaseInput.vue'
 import BaseActionFooter from '../base/BaseActionFooter.vue'
 import BaseButton from '../base/BaseButton.vue'
@@ -127,6 +192,9 @@ const form = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const dayShortNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']
+const dayFullNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi']
+
 const branchCategory = ref('STANDARD')
 
 const filteredSpecialties = computed(() => {
@@ -135,6 +203,102 @@ const filteredSpecialties = computed(() => {
   }
   return props.specialties.filter(s => !s.hasBelts)
 })
+
+const sortedSelectedDays = computed(() => {
+  return [...(form.value.days || [])].sort((a, b) => a - b)
+})
+
+const getDaySlots = (dayIdx) => {
+  if (!form.value.groupSchedules) form.value.groupSchedules = []
+  return form.value.groupSchedules.filter(s => s.day === dayIdx)
+}
+
+const addSlotToDay = (dayIdx) => {
+  if (!form.value.groupSchedules) form.value.groupSchedules = []
+  const existing = getDaySlots(dayIdx)
+  let lastEnd = '19:30'
+  let newEnd = '21:00'
+  if (existing.length > 0) {
+    const last = existing[existing.length - 1]
+    lastEnd = last.endTime || '19:30'
+    const [h] = lastEnd.split(':').map(Number)
+    newEnd = `${String((h + 2) % 24).padStart(2, '0')}:00`
+  }
+  form.value.groupSchedules.push({
+    day: dayIdx,
+    dayName: dayFullNames[dayIdx],
+    startTime: lastEnd,
+    endTime: newEnd
+  })
+  syncMainTimes()
+}
+
+const removeSlot = (dayIdx, slotIdxInDay) => {
+  if (!form.value.groupSchedules) return
+  const daySlots = getDaySlots(dayIdx)
+  const targetSlot = daySlots[slotIdxInDay]
+  if (targetSlot) {
+    const idxInMain = form.value.groupSchedules.indexOf(targetSlot)
+    if (idxInMain !== -1) {
+      form.value.groupSchedules.splice(idxInMain, 1)
+    }
+  }
+  // Eğer bu güne ait tüm seanslar silindiyse günü de pasife al
+  if (getDaySlots(dayIdx).length === 0) {
+    const dayPos = form.value.days.indexOf(dayIdx)
+    if (dayPos !== -1) form.value.days.splice(dayPos, 1)
+  }
+  syncMainTimes()
+}
+
+const copyFirstDaySlotsToAll = () => {
+  if (!form.value.days?.length || !form.value.groupSchedules?.length) return
+  const firstDay = sortedSelectedDays.value[0]
+  const firstDaySlots = getDaySlots(firstDay)
+  if (firstDaySlots.length === 0) return
+
+  // Seçili tüm günlerin seanslarını sıfırla ve ilk günün seanslarını kopyala
+  form.value.groupSchedules = []
+  sortedSelectedDays.value.forEach(dayIdx => {
+    firstDaySlots.forEach(slot => {
+      form.value.groupSchedules.push({
+        day: dayIdx,
+        dayName: dayFullNames[dayIdx],
+        startTime: slot.startTime,
+        endTime: slot.endTime
+      })
+    })
+  })
+  syncMainTimes()
+}
+
+const syncMainTimes = () => {
+  if (form.value.groupSchedules && form.value.groupSchedules.length > 0) {
+    form.value.startTime = form.value.groupSchedules[0].startTime
+    form.value.endTime = form.value.groupSchedules[0].endTime
+  }
+}
+
+const toggleDay = (idx) => {
+  if (!form.value.days) form.value.days = []
+  if (!form.value.groupSchedules) form.value.groupSchedules = []
+
+  const i = form.value.days.indexOf(idx)
+  if (i === -1) {
+    form.value.days.push(idx)
+    // Varsayılan seans ekle
+    form.value.groupSchedules.push({
+      day: idx,
+      dayName: dayFullNames[idx],
+      startTime: '17:30',
+      endTime: '19:00'
+    })
+  } else {
+    form.value.days.splice(i, 1)
+    form.value.groupSchedules = form.value.groupSchedules.filter(s => s.day !== idx)
+  }
+  syncMainTimes()
+}
 
 watch(branchCategory, (newVal) => {
    const currentSpec = props.specialties.find(s => s.id === form.value.specialtyId)
@@ -176,25 +340,32 @@ const updateEndDate = (months) => {
   form.value.endDate = start.toISOString().split('T')[0]
 }
 
-const toggleDay = (idx) => {
-  const i = form.value.days.indexOf(idx)
-  if (i === -1) form.value.days.push(idx)
-  else form.value.days.splice(i, 1)
-}
-
 const totalSessions = computed(() => {
   const pkg = props.packages.find(p => p.id === form.value.packageId)
-  if (!pkg || !form.value.days?.length) return 0
-  return pkg.durationMonths * 4 * form.value.days.length
+  if (!pkg || !form.value.groupSchedules?.length) return 0
+  return pkg.durationMonths * 4 * form.value.groupSchedules.length
 })
 
 onMounted(() => {
+  if (!form.value.days) form.value.days = []
+  if (!form.value.groupSchedules) form.value.groupSchedules = []
+
   if (props.isEdit) {
     const spec = props.specialties.find(s => s.id === form.value.specialtyId)
     if (spec) {
       branchCategory.value = spec.hasBelts ? 'BELT' : 'STANDARD'
     }
+    if (form.value.days.length > 0 && form.value.groupSchedules.length === 0) {
+      // Legacy kaydı groupSchedules formatına dönüştür
+      form.value.days.forEach(dayIdx => {
+        form.value.groupSchedules.push({
+          day: dayIdx,
+          dayName: dayFullNames[dayIdx],
+          startTime: form.value.startTime || '17:30',
+          endTime: form.value.endTime || '19:00'
+        })
+      })
+    }
   }
 })
-
 </script>

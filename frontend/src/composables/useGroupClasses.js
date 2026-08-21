@@ -42,9 +42,11 @@ export function useGroupClasses() {
 
   const fetchMembers = async () => {
     try {
-      members.value = await memberService.getAll()
+      const response = await memberService.getAll({ limit: 1000, profileType: 'MEMBER' })
+      members.value = Array.isArray(response) ? response : (response?.members || [])
     } catch (err) {
       console.error('Error fetching members:', err)
+      members.value = []
     }
   }
 

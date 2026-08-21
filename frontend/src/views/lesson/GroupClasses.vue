@@ -53,10 +53,19 @@
                       <CalendarDays class="w-3.5 h-3.5 text-indigo-500/80" />
                       {{ group.startDate }}
                     </div>
-                    <div class="flex items-center gap-2 text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest ">
-                      <Clock class="w-3.5 h-3.5 text-amber-500/80" />
-                      {{ group.startTime }} - {{ group.endTime }}
-                    </div>
+                    <template v-if="group.groupSchedules && group.groupSchedules.length > 0">
+                      <div v-for="(slot, idx) in group.groupSchedules" :key="idx" class="flex items-center gap-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-widest">
+                        <span class="text-[0.55rem] text-emerald-400 font-black bg-emerald-500/10 px-1.5 py-0.5 border border-emerald-500/20 rounded">{{ slot.dayName || ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'][slot.day] }}</span>
+                        <Clock class="w-3 h-3 text-amber-500/80" />
+                        {{ slot.startTime }} - {{ slot.endTime }}
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="flex items-center gap-2 text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest ">
+                        <Clock class="w-3.5 h-3.5 text-amber-500/80" />
+                        {{ group.startTime }} - {{ group.endTime }}
+                      </div>
+                    </template>
                 </div>
 
                 <div class="space-y-1.5 px-1">
@@ -140,15 +149,24 @@
           <!-- Program Akışı -->
           <template #cell-program="{ item }">
             <div class="space-y-1 uppercase inline-block text-left">
-              <div class="flex items-center gap-2 text-[0.7rem] text-slate-300 font-black tracking-widest">
-                <Clock class="w-3.5 h-3.5 text-amber-500" />
-                {{ item.startTime }} - {{ item.endTime }}
-              </div>
-              <div class="flex gap-1 flex-wrap">
-                <span v-for="day in item.days" :key="day" class="text-[0.5rem] font-black bg-slate-950 px-1.5 py-0.5 text-slate-500 uppercase border border-slate-800">
-                  {{ ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'][day] }}
-                </span>
-              </div>
+              <template v-if="item.groupSchedules && item.groupSchedules.length > 0">
+                <div v-for="(slot, idx) in item.groupSchedules" :key="idx" class="flex items-center gap-2 text-[0.65rem] text-slate-300 font-black tracking-widest">
+                  <span class="text-[0.55rem] text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.2 border border-emerald-500/20">{{ slot.dayName || ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'][slot.day] }}</span>
+                  <Clock class="w-3 h-3 text-amber-500" />
+                  {{ slot.startTime }} - {{ slot.endTime }}
+                </div>
+              </template>
+              <template v-else>
+                <div class="flex items-center gap-2 text-[0.7rem] text-slate-300 font-black tracking-widest">
+                  <Clock class="w-3.5 h-3.5 text-amber-500" />
+                  {{ item.startTime }} - {{ item.endTime }}
+                </div>
+                <div class="flex gap-1 flex-wrap">
+                  <span v-for="day in item.days" :key="day" class="text-[0.5rem] font-black bg-slate-950 px-1.5 py-0.5 text-slate-500 uppercase border border-slate-800">
+                    {{ ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'][day] }}
+                  </span>
+                </div>
+              </template>
             </div>
           </template>
 

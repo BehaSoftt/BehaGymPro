@@ -21,16 +21,28 @@ class GroupClassController {
         });
         if (existing) throw new AppError('Bu isimde bir grup dersi zaten mevcut.', 400);
 
-        // Eğitmen Çakışma Kontrolü (Grup dersi günlerini tek tek kontrol et)
-        if (groupData.instructorId && groupData.days?.length > 0) {
-            for (const day of groupData.days) {
-                await LessonService.checkOverlaps({
-                    instructorId: groupData.instructorId,
-                    dayOfWeek: day,
-                    startTime: groupData.startTime,
-                    endTime: groupData.endTime,
-                    companyId: groupData.companyId
-                });
+        // Eğitmen Çakışma Kontrolü (Grup dersi seanslarını tek tek kontrol et)
+        if (groupData.instructorId) {
+            if (Array.isArray(groupData.groupSchedules) && groupData.groupSchedules.length > 0) {
+                for (const slot of groupData.groupSchedules) {
+                    await LessonService.checkOverlaps({
+                        instructorId: groupData.instructorId,
+                        dayOfWeek: slot.day,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        companyId: groupData.companyId
+                    });
+                }
+            } else if (groupData.days?.length > 0) {
+                for (const day of groupData.days) {
+                    await LessonService.checkOverlaps({
+                        instructorId: groupData.instructorId,
+                        dayOfWeek: day,
+                        startTime: groupData.startTime,
+                        endTime: groupData.endTime,
+                        companyId: groupData.companyId
+                    });
+                }
             }
         }
 
@@ -74,18 +86,31 @@ class GroupClassController {
         if (!group) throw new AppError('Grup bulunamadı.', 404);
 
         const updateData = { ...req.body, endDate: req.body.endDate || null };
-        const { instructorId, days, startTime, endTime } = { ...group.toJSON(), ...updateData };
+        const combined = { ...group.toJSON(), ...updateData };
 
-        if (instructorId && days?.length > 0) {
-            for (const day of days) {
-                await LessonService.checkOverlaps({
-                    instructorId,
-                    dayOfWeek: day,
-                    startTime,
-                    endTime,
-                    companyId: group.companyId,
-                    excludeGroupClassId: req.params.id
-                });
+        if (combined.instructorId) {
+            if (Array.isArray(combined.groupSchedules) && combined.groupSchedules.length > 0) {
+                for (const slot of combined.groupSchedules) {
+                    await LessonService.checkOverlaps({
+                        instructorId: combined.instructorId,
+                        dayOfWeek: slot.day,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        companyId: group.companyId,
+                        excludeGroupClassId: req.params.id
+                    });
+                }
+            } else if (combined.days?.length > 0) {
+                for (const day of combined.days) {
+                    await LessonService.checkOverlaps({
+                        instructorId: combined.instructorId,
+                        dayOfWeek: day,
+                        startTime: combined.startTime,
+                        endTime: combined.endTime,
+                        companyId: group.companyId,
+                        excludeGroupClassId: req.params.id
+                    });
+                }
             }
         }
 

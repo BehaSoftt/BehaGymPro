@@ -16,6 +16,7 @@ const GroupClass = sequelize.define('GroupClass', {
     startTime: { type: DataTypes.TIME },
     endTime: { type: DataTypes.TIME },
     days: { type: DataTypes.JSONB }, // e.g. [1, 3, 5] for Mon, Wed, Fri
+    groupSchedules: { type: DataTypes.JSONB, defaultValue: [] }, // Multi-session slots: [{ day: 1, dayName: 'Pazartesi', startTime: '17:30', endTime: '19:00' }, ...]
 
     status: {
         type: DataTypes.STRING,

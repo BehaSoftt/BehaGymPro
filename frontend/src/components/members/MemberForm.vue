@@ -714,7 +714,7 @@ const handlePackageChange = (pkgId) => {
       ...(localMember.value || {}),
       packageId: pkgId,
       membershipType: pkg.name || 'STANDART',
-      specialtyId: pkg.specialtyId || localMember.value?.specialtyId,
+      specialtyId: localMember.value?.specialtyId || pkg.specialtyId || '',
       expiryDate: expDate
     }
   } else {

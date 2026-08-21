@@ -1,5 +1,5 @@
 const MemberService = require('../../services/member/MemberService');
-const { TrainingPlan, Member } = require('../../models');
+const { TrainingPlan, Member, User, MembershipPackage, Branch, SportSpecialty, MemberSportProfile } = require('../../models');
 const { catchAsync, AppError } = require('../../middleware/errorHandler');
 const { Op } = require('sequelize');
 
@@ -73,7 +73,11 @@ class MemberController {
                 include: [
                     { model: User, as: 'user', attributes: ['email', 'username'], required: false },
                     { model: MembershipPackage, as: 'package', required: false },
-                    { model: Branch, as: 'Branch', required: false }
+                    { model: Branch, as: 'Branch', required: false },
+                    { model: SportSpecialty, as: 'specialty', attributes: ['id', 'name'], required: false },
+                    { model: SportSpecialty, as: 'lessonSpecialty', attributes: ['id', 'name'], required: false },
+                    { model: SportSpecialty, as: 'beltBranch', attributes: ['id', 'name'], required: false },
+                    { model: MemberSportProfile, as: 'sportProfiles', required: false }
                 ]
             });
             if (!member) throw new AppError('Üye bulunamadı.', 404);

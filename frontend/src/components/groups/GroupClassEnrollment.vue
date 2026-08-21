@@ -10,9 +10,9 @@
          <div class="flex items-center bg-slate-900 overflow-hidden h-full rounded-sm">
             <button 
               v-for="tab in [
-                { k: 'ALL', l: 'HEPSİ', c: members.length, activeClass: 'bg-indigo-600' },
+                { k: 'ALL', l: 'HEPSİ', c: memberList.length, activeClass: 'bg-indigo-600' },
                 { k: 'ENROLLED', l: 'KAYITLI', c: enrolledCount, activeClass: 'bg-emerald-600' },
-                { k: 'AVAILABLE', l: 'YENİ', c: members.length - enrolledCount, activeClass: 'bg-rose-600' }
+                { k: 'AVAILABLE', l: 'YENİ', c: memberList.length - enrolledCount, activeClass: 'bg-rose-600' }
               ]"
               :key="tab.k"
               @click="filterTab = tab.k"
@@ -165,12 +165,18 @@ const viewMode = ref('list')
 const filterTab = ref('ALL')
 const selectedIds = ref([])
 
+const memberList = computed(() => {
+  if (Array.isArray(props.members)) return props.members
+  if (props.members && Array.isArray(props.members.members)) return props.members.members
+  return []
+})
+
 const enrolledCount = computed(() => {
   return props.group?.enrolledMembers?.length || 0
 })
 
 const filteredMembers = computed(() => {
-  let list = props.members.filter(m => m.isActive !== false)
+  let list = memberList.value.filter(m => m.isActive !== false)
   
   if (filterTab.value === 'ENROLLED') {
     list = list.filter(m => isEnrolled(m.id))

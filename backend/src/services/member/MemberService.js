@@ -484,7 +484,7 @@ class MemberService {
         }
         // If lessonTypes is missing from payload, we don't change the current value
 
-        // Boş string temizliği
+        // Boş string ve null temizliği
         const nullFields = [
             'birthDate', 'expiryDate', 'packageId', 'privateLessonSpecialtyId', 
             'privateLessonInstructorId', 'bloodGroup', 'beltBranchId', 
@@ -492,10 +492,15 @@ class MemberService {
             'fitnessNotes', 'healthNotes', 'city', 'district', 'address'
         ];
         nullFields.forEach(field => {
-            if (updateData[field] === '' || updateData[field] === 'null' || updateData[field] === undefined) {
+            if (updateData[field] === '' || updateData[field] === 'null') {
                 updateData[field] = null;
             }
         });
+
+        // Üye tipi MEMBER ise ana branşı specialties dizisinde de güncel tut
+        if ((updateData.profileType || member.profileType) === 'MEMBER' && updateData.specialtyId) {
+            updateData.specialties = [updateData.specialtyId];
+        }
 
         // MEMBERSHIP PACKAGE SYNC: If packageId changed, create active MemberPackage
         if (updateData.packageId && updateData.packageId !== member.packageId) {
@@ -577,7 +582,20 @@ class MemberService {
             }
         }
 
-        return member;
+        // Güncellenmiş üye detaylarını ilişkili nesnelerle (yeni branş, paket vb.) re-fetch et
+        const reFetchedMember = await Member.findByPk(id, {
+            include: [
+                { model: User, as: 'user', attributes: ['email', 'username'], required: false },
+                { model: MembershipPackage, as: 'package', required: false },
+                { model: Branch, as: 'Branch', required: false },
+                { model: SportSpecialty, as: 'specialty', attributes: ['id', 'name'], required: false },
+                { model: SportSpecialty, as: 'lessonSpecialty', attributes: ['id', 'name'], required: false },
+                { model: SportSpecialty, as: 'beltBranch', attributes: ['id', 'name'], required: false },
+                { model: MemberSportProfile, as: 'sportProfiles', required: false }
+            ]
+        });
+
+        return reFetchedMember || member;
     }
 
     /**

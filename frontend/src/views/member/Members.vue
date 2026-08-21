@@ -422,7 +422,7 @@ const newMember = ref({
 const getMemberSpecialtyNames = (item) => {
   const names = []
 
-  if (item.specialties && Array.isArray(item.specialties) && item.specialties.length > 0) {
+  if (item.profileType === 'INSTRUCTOR' && item.specialties && Array.isArray(item.specialties) && item.specialties.length > 0) {
     item.specialties.forEach(id => {
       const s = availableSpecialties.value?.find(x => String(x.id) === String(id))
       if (s?.name && !names.includes(s.name)) {
@@ -502,7 +502,7 @@ const startEdit = async (member) => {
 
   const { 
     Branch, specialty, beltBranch, 
-    activePackages, privateLessonPackages,
+    activePackages, privateLessonPackages, package: pkgObj,
     ...pureData 
   } = fullData
   
@@ -510,12 +510,12 @@ const startEdit = async (member) => {
     ...pureData,
     memberCode: (!pureData.memberCode || pureData.memberCode === '0') ? generate10DigitCode() : pureData.memberCode,
     branchId: pureData.branchId || Branch?.id || auth.user?.branchId || branches.value?.[0]?.id || '',
-    specialtyId: pureData.specialtyId || pureData.specialty?.id || specialty?.id || '',
+    specialtyId: pureData.specialtyId || pureData.specialty?.id || specialty?.id || member.specialtyId || '',
     beltBranchId: pureData.beltBranchId || beltBranch?.id || '',
     city: pureData.city || '',
     district: pureData.district || '',
     address: pureData.address || '',
-    packageId: pureData.packageId || pureData.package?.id || activePackages?.[0]?.packageId || '',
+    packageId: pureData.packageId || pureData.package?.id || activePackages?.[0]?.packageId || pkgObj?.id || '',
     lessonTypes: pureData.lessonTypes || [],
     specialties: pureData.specialties || []
   }
