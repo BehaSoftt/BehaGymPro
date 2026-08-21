@@ -442,9 +442,6 @@ const startAutoRefresh = () => {
                 refreshProgress.value = 100 
                 
                 await fetchDashboardData(true)
-                if (toast) {
-                    toast('Dashboard Güncellendi', 'success')
-                }
             }
         } catch (error) {
             console.error('[DASHBOARD] Otomatik yenileme hatası:', error)
