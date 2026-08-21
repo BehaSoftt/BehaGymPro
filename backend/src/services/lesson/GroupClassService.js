@@ -120,12 +120,19 @@ class GroupClassService {
             }
         }
 
-        const enrollments = validMemberIds.map(memberId => ({
-            groupClassId,
-            memberId,
-            status: 'ENROLLED'
-        }));
-        return await GroupClassMember.bulkCreate(enrollments, { ignoreDuplicates: true });
+        const enrollments = [];
+        for (const memberId of validMemberIds) {
+            const [record] = await GroupClassMember.findOrCreate({
+                where: { groupClassId, memberId },
+                defaults: {
+                    groupClassId,
+                    memberId,
+                    status: 'ENROLLED'
+                }
+            });
+            enrollments.push(record);
+        }
+        return enrollments;
     }
 
     /**

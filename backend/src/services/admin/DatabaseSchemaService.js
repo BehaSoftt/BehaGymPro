@@ -6,11 +6,12 @@ const { sequelize } = require('../../models');
  */
 class DatabaseSchemaService {
     static async updateSchema() {
-        const SCHEMA_VERSION = '2026.08.21.002'; // GroupClasses groupSchedules ve yeni şema alanları
+        const SCHEMA_VERSION = '2026.08.21.003'; // GroupClassMembers unique index ve şema iyileştirmeleri
 
-        // Her zaman çalıştırılacak kritik sütun eklentileri (Fail-safe)
+        // Her zaman çalıştırılacak kritik sütun ve indeks eklentileri (Fail-safe)
         try {
             await sequelize.query('ALTER TABLE "GroupClasses" ADD COLUMN IF NOT EXISTS "groupSchedules" JSONB DEFAULT \'[]\'::JSONB');
+            await sequelize.query('CREATE UNIQUE INDEX IF NOT EXISTS "idx_group_class_member_unique" ON "GroupClassMembers" ("groupClassId", "memberId")');
         } catch (_) {}
 
         // 1. Durum Kontrolü
