@@ -46,53 +46,61 @@ class GroupClassService {
      */
     static async enrollMembers(groupClassId, memberIds) {
         const { Op } = require('sequelize');
+        const { LessonSchedule, GroupClass, GroupClassMember, Member, SportSpecialty } = require('../../models');
+
         const group = await GroupClass.findByPk(groupClassId);
         if (!group) throw new Error('Grup bulunamadı.');
 
-        const timeOverlap = {
-            [Op.or]: [
-                { startTime: { [Op.lt]: group.endTime }, endTime: { [Op.gt]: group.startTime } }
-            ]
-        };
+        const groupSlots = Array.isArray(group.groupSchedules) && group.groupSchedules.length > 0
+            ? group.groupSchedules
+            : (group.days || []).map(day => ({ day, startTime: group.startTime, endTime: group.endTime }));
 
         for (const memberId of memberIds) {
             const member = await Member.findByPk(memberId);
             if (!member) continue;
 
-            // 1. Üyenin bu saatte başka bir BİREYSEL dersi var mı?
-            const lessonOver = await LessonSchedule.findOne({
-                where: {
-                    memberId,
-                    isActive: true,
-                    dayOfWeek: { [Op.in]: group.days },
-                    ...timeOverlap
-                },
-                include: [{ model: SportSpecialty, as: 'specialty', attributes: ['name'] }]
-            });
-            if (lessonOver) {
-                throw new Error(`ÇAKIŞMA: ${member.fullName} isimli üyenin bu saatte "${lessonOver.specialty?.name || 'Başka Bir'}" dersi var.`);
-            }
-
-            // 2. Üyenin bu saatte başka bir GRUP dersi var mı?
-            const groupOver = await GroupClassMember.findAll({
-                where: { memberId, groupClassId: { [Op.ne]: groupClassId } },
-                include: [{
-                    model: GroupClass,
-                    as: 'groupClass',
+            for (const slot of groupSlots) {
+                // 1. Üyenin bu saatte başka bir BİREYSEL dersi var mı?
+                const lessonOver = await LessonSchedule.findOne({
                     where: {
-                        status: 'ACTIVE',
-                        days: { [Op.overlap]: group.days }, // Any day match
-                        ...timeOverlap
-                    }
-                }]
-            });
+                        memberId,
+                        isActive: true,
+                        dayOfWeek: slot.day,
+                        startTime: { [Op.lt]: slot.endTime },
+                        endTime: { [Op.gt]: slot.startTime }
+                    },
+                    include: [{ model: SportSpecialty, as: 'specialty', attributes: ['name'] }]
+                });
+                if (lessonOver) {
+                    throw new Error(`ÇAKIŞMA: ${member.fullName} isimli üyenin bu saatte "${lessonOver.specialty?.name || 'Başka Bir'}" dersi var.`);
+                }
 
-            if (groupOver.length > 0) {
-                // Find exact day overlap for better error message
-                const actualOver = groupOver.find(go => 
-                    go.groupClass.days.some(d => group.days.includes(d))
-                );
-                if (actualOver) throw new Error(`ÇAKIŞMA: ${member.fullName} zaten bu saatte "${actualOver.groupClass.name}" grubuna kayıtlı.`);
+                // 2. Üyenin bu saatte başka bir GRUP dersi var mı?
+                const existingGroupEnrollments = await GroupClassMember.findAll({
+                    where: { memberId, groupClassId: { [Op.ne]: groupClassId } },
+                    include: [{
+                        model: GroupClass,
+                        as: 'groupClass',
+                        where: { status: 'ACTIVE' }
+                    }]
+                });
+
+                for (const enroll of existingGroupEnrollments) {
+                    const otherGroup = enroll.groupClass;
+                    if (!otherGroup) continue;
+                    const otherSlots = Array.isArray(otherGroup.groupSchedules) && otherGroup.groupSchedules.length > 0
+                        ? otherGroup.groupSchedules
+                        : (otherGroup.days || []).map(d => ({ day: d, startTime: otherGroup.startTime, endTime: otherGroup.endTime }));
+
+                    const overlapSlot = otherSlots.find(os => 
+                        os.day === slot.day && 
+                        (os.startTime < slot.endTime && os.endTime > slot.startTime)
+                    );
+
+                    if (overlapSlot) {
+                        throw new Error(`ÇAKIŞMA: ${member.fullName} zaten bu saatte "${otherGroup.name}" grubuna kayıtlı.`);
+                    }
+                }
             }
         }
 
