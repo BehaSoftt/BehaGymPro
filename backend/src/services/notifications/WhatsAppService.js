@@ -85,6 +85,7 @@ class WhatsAppService {
 
         const puppeteerOptions = {
             headless: true,
+            protocolTimeout: 120000, // Puppeteer zaman aşımını 120 saniyeye çıkar
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
