@@ -50,9 +50,14 @@ class GroupClassService {
         const { AppError } = require('../../middleware/errorHandler');
 
         if (!groupClassId) throw new AppError('Grup seçilmedi.', 400);
-        const targetIds = Array.isArray(memberIds) ? memberIds : [memberIds];
+        const targetIds = Array.isArray(memberIds) ? memberIds : [memberId];
         const validMemberIds = targetIds.filter(id => id && typeof id === 'string');
         if (validMemberIds.length === 0) throw new AppError('En az bir geçerli üye seçilmelidir.', 400);
+
+        // Auto-healing veritabanı sütun kontrolü
+        try {
+            await GroupClass.sequelize.query('ALTER TABLE "GroupClasses" ADD COLUMN IF NOT EXISTS "groupSchedules" JSONB DEFAULT \'[]\'::JSONB');
+        } catch (_) {}
 
         const group = await GroupClass.findByPk(groupClassId);
         if (!group) throw new AppError('Grup bulunamadı.', 404);

@@ -62,8 +62,8 @@ class GroupClassController {
      * Gruba üye ekle
      */
     static enrollMember = catchAsync(async (req, res) => {
-        const { groupClassId, memberIds, memberId } = req.body;
-        const targetIds = Array.isArray(memberIds) ? memberIds : [memberId];
+        const { groupClassId, memberIds, memberId } = req.body || {};
+        const targetIds = Array.isArray(memberIds) ? memberIds : (memberId ? [memberId] : []);
         
         await GroupClassService.enrollMembers(groupClassId, targetIds);
         res.status(201).json({ message: 'Üyeler gruba başarıyla eklendi.' });
