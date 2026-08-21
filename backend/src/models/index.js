@@ -171,6 +171,12 @@ GroupClass.belongsTo(Company, { foreignKey: 'companyId', as: 'Company' });
 GroupClass.belongsToMany(Member, { through: GroupClassMember, foreignKey: 'groupClassId', as: 'enrolledMembers' });
 Member.belongsToMany(GroupClass, { through: GroupClassMember, foreignKey: 'memberId', as: 'enrolledGroups' });
 
+GroupClassMember.belongsTo(GroupClass, { foreignKey: 'groupClassId', as: 'groupClass' });
+GroupClass.hasMany(GroupClassMember, { foreignKey: 'groupClassId', as: 'groupClassMembers' });
+
+GroupClassMember.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
+Member.hasMany(GroupClassMember, { foreignKey: 'memberId', as: 'groupClassMembers' });
+
 GroupClass.hasMany(Attendance, { foreignKey: 'groupClassId', as: 'attendanceRecords' });
 Attendance.belongsTo(GroupClass, { foreignKey: 'groupClassId', as: 'groupClass' });
 
